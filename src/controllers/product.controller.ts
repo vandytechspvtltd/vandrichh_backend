@@ -1,10 +1,248 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { Product } from "../models/product.model.js";
+import { Category } from "../models/category.model.js";
 
 // =====================================================
-// Get All Products
+// Helpers
 // =====================================================
+
+const escapeRegex = (value: string): string => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+const parseBooleanQuery = (
+  value: unknown
+): boolean | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return String(value).toLowerCase() === "true";
+};
+
+// =====================================================
+// Resolve Category
+//
+// Accepts:
+// - MongoDB _id
+// - category name
+// - category slug
+//
+// Returns all possible values that may be stored
+// inside Product.category.
+// =====================================================
+
+const resolveCategoryValues = async (
+  value: string
+): Promise<any[]> => {
+  const categoryValues: any[] = [];
+
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return categoryValues;
+  }
+
+  // -----------------------------------------------------
+  // If Android sent MongoDB ObjectId
+  // -----------------------------------------------------
+
+  if (mongoose.isValidObjectId(normalizedValue)) {
+    categoryValues.push(normalizedValue);
+    categoryValues.push(
+      new mongoose.Types.ObjectId(normalizedValue)
+    );
+
+    const category = await Category.findById(
+      normalizedValue
+    )
+      .select("_id name slug")
+      .lean();
+
+    if (category) {
+      categoryValues.push(category.name);
+      categoryValues.push(category.slug);
+      categoryValues.push(String(category._id));
+    }
+
+    return uniqueValues(categoryValues);
+  }
+
+  // -----------------------------------------------------
+  // If category name or slug was supplied
+  // -----------------------------------------------------
+
+  const regex = new RegExp(
+    `^${escapeRegex(normalizedValue)}$`,
+    "i"
+  );
+
+  const category = await Category.findOne({
+    $or: [
+      { name: regex },
+      { slug: regex },
+    ],
+    isActive: true,
+  })
+    .select("_id name slug")
+    .lean();
+
+  if (category) {
+    categoryValues.push(
+      String(category._id)
+    );
+
+    categoryValues.push(category.name);
+    categoryValues.push(category.slug);
+  }
+
+  // Also allow direct value
+  categoryValues.push(normalizedValue);
+
+  return uniqueValues(categoryValues);
+};
+
+// =====================================================
+// Resolve Subcategory
+//
+// NO HARDCODED MAPPING.
+//
+// It searches the selected Category's subcategories
+// dynamically from MongoDB.
+//
+// Accepts:
+// - subcategory id
+// - subcategory name
+//
+// Returns both id/name values so Product.subcategory
+// can match whichever format is stored in DB.
+// =====================================================
+
+const resolveSubcategoryValues = async (
+  categoryValue: string | undefined,
+  subcategoryValue: string
+): Promise<string[]> => {
+  const values: string[] = [];
+
+  const normalizedSubcategory =
+    subcategoryValue.trim();
+
+  if (!normalizedSubcategory) {
+    return values;
+  }
+
+  // -----------------------------------------------------
+  // Find selected category
+  // -----------------------------------------------------
+
+  let category = null;
+
+  if (
+    categoryValue &&
+    mongoose.isValidObjectId(categoryValue)
+  ) {
+    category = await Category.findById(
+      categoryValue
+    )
+      .select("subcategories")
+      .lean();
+  } else if (categoryValue) {
+    const categoryRegex = new RegExp(
+      `^${escapeRegex(categoryValue.trim())}$`,
+      "i"
+    );
+
+    category = await Category.findOne({
+      $or: [
+        { name: categoryRegex },
+        { slug: categoryRegex },
+      ],
+      isActive: true,
+    })
+      .select("subcategories")
+      .lean();
+  }
+
+  // -----------------------------------------------------
+  // Search subcategory dynamically
+  // -----------------------------------------------------
+
+  if (category?.subcategories) {
+    const subcategoryRegex = new RegExp(
+      `^${escapeRegex(normalizedSubcategory)}$`,
+      "i"
+    );
+
+    const matchedSubcategory =
+      category.subcategories.find(
+        (subcat: any) =>
+          subcategoryRegex.test(
+            String(subcat.name ?? "")
+          ) ||
+          subcategoryRegex.test(
+            String(subcat.id ?? "")
+          )
+      );
+
+    if (matchedSubcategory) {
+      if (matchedSubcategory.id) {
+        values.push(
+          String(matchedSubcategory.id)
+        );
+      }
+
+      if (matchedSubcategory.name) {
+        values.push(
+          String(matchedSubcategory.name)
+        );
+      }
+    }
+  }
+
+  // Also allow the value directly.
+  values.push(normalizedSubcategory);
+
+  return uniqueStrings(values);
+};
+
+// =====================================================
+// Unique Values
+// =====================================================
+
+const uniqueValues = (
+  values: any[]
+): any[] => {
+  const result: any[] = [];
+
+  for (const value of values) {
+    const key = String(value);
+
+    if (
+      !result.some(
+        (existing) =>
+          String(existing) === key
+      )
+    ) {
+      result.push(value);
+    }
+  }
+
+  return result;
+};
+
+const uniqueStrings = (
+  values: string[]
+): string[] => {
+  return [
+    ...new Set(
+      values.filter(
+        (value) => value.trim().length > 0
+      )
+    ),
+  ];
+};
+
 // =====================================================
 // Get All Products
 // =====================================================
@@ -15,13 +253,23 @@ export const getAll = async (
 ) => {
   try {
     const page = Math.max(
-      parseInt(String(req.query.page ?? "1"), 10),
+      parseInt(
+        String(
+          req.query.page ?? "1"
+        ),
+        10
+      ),
       1
     );
 
     const limit = Math.min(
       Math.max(
-        parseInt(String(req.query.limit ?? "20"), 10),
+        parseInt(
+          String(
+            req.query.limit ?? "20"
+          ),
+          10
+        ),
         1
       ),
       100
@@ -32,157 +280,84 @@ export const getAll = async (
     };
 
     // =====================================================
-    // CATEGORY FILTER
+    // CATEGORY
     // =====================================================
 
     if (req.query.category) {
-      const categoryValue = String(req.query.category).trim();
+      const categoryValue =
+        String(
+          req.query.category
+        ).trim();
 
-      /*
-       * Android sends Category MongoDB _id:
-       *
-       * 6a96f6d9eae00459f59e4e50
-       *
-       * Products may store category as:
-       * - ObjectId
-       * - string ObjectId
-       * - category name
-       * - category slug
-       */
-
-      const categoryValues: any[] = [];
-
-      if (mongoose.isValidObjectId(categoryValue)) {
-        categoryValues.push(
-          new mongoose.Types.ObjectId(categoryValue)
-        );
-
-        categoryValues.push(categoryValue);
-      }
-
-      // Also allow direct category name / slug
-      categoryValues.push(categoryValue);
-
-      // Resolve MongoDB category document
-      try {
-        const Category = (
-          await import("../models/category.model.js")
-        ).Category;
-
-        const categoryDoc = await Category.findById(
+      const categoryValues =
+        await resolveCategoryValues(
           categoryValue
-        )
-          .select("_id name slug")
-          .lean();
-
-        if (categoryDoc) {
-          categoryValues.push(categoryDoc.name);
-          categoryValues.push(categoryDoc.slug);
-          categoryValues.push(String(categoryDoc._id));
-        }
-      } catch (categoryError) {
-        console.error(
-          "⚠️ Category lookup failed:",
-          categoryError
         );
+
+      if (categoryValues.length > 0) {
+        filter.category = {
+          $in: categoryValues,
+        };
+      } else {
+        // No category exists -> no products
+        filter.category = {
+          $in: [],
+        };
       }
-
-      // Remove duplicates
-      const uniqueCategoryValues = [
-        ...new Map(
-          categoryValues.map((value) => [
-            String(value),
-            value,
-          ])
-        ).values(),
-      ];
-
-      filter.category = {
-        $in: uniqueCategoryValues,
-      };
 
       console.log(
-        "🟢 Product category filter:",
-        uniqueCategoryValues
+        "[Products] Category input:",
+        categoryValue
+      );
+
+      console.log(
+        "[Products] Resolved category values:",
+        categoryValues
       );
     }
 
     // =====================================================
-    // SUBCATEGORY FILTER
+    // SUBCATEGORY
     // =====================================================
 
     if (req.query.subcategory) {
-      const subcategoryValue = String(
-        req.query.subcategory
-      ).trim();
+      const subcategoryValue =
+        String(
+          req.query.subcategory
+        ).trim();
 
-      /*
-       * Android currently sends:
-       *
-       * Sneakers
-       * Formal Shoes
-       * Bra
-       * Sports Bra
-       * Formal Shirts
-       * Casual Shirts
-       *
-       * DB may store:
-       *
-       * footwear-sneakers
-       * footwear-formal
-       * innerwear-bra
-       * innerwear-sports-bra
-       * shirts-formal
-       * shirts-casual
-       */
+      const categoryValue =
+        req.query.category
+          ? String(
+              req.query.category
+            ).trim()
+          : undefined;
 
-      const subcategoryMap: Record<string, string[]> = {
-        sneakers: [
-          "Sneakers",
-          "footwear-sneakers",
-        ],
+      const subcategoryValues =
+        await resolveSubcategoryValues(
+          categoryValue,
+          subcategoryValue
+        );
 
-        "formal shoes": [
-          "Formal Shoes",
-          "footwear-formal",
-        ],
-
-        bra: [
-          "Bra",
-          "innerwear-bra",
-        ],
-
-        "sports bra": [
-          "Sports Bra",
-          "innerwear-sports-bra",
-        ],
-
-        "formal shirts": [
-          "Formal Shirts",
-          "shirts-formal",
-        ],
-
-        "casual shirts": [
-          "Casual Shirts",
-          "shirts-casual",
-        ],
-      };
-
-      const normalized =
-        subcategoryValue.toLowerCase();
-
-      const values =
-        subcategoryMap[normalized] ?? [
-          subcategoryValue,
-        ];
-
-      filter.subcategory = {
-        $in: values,
-      };
+      if (subcategoryValues.length > 0) {
+        filter.subcategory = {
+          $in: subcategoryValues,
+        };
+      } else {
+        // No matching subcategory
+        filter.subcategory = {
+          $in: [],
+        };
+      }
 
       console.log(
-        "🟢 Product subcategory filter:",
-        values
+        "[Products] Subcategory input:",
+        subcategoryValue
+      );
+
+      console.log(
+        "[Products] Resolved subcategory values:",
+        subcategoryValues
       );
     }
 
@@ -191,71 +366,91 @@ export const getAll = async (
     // =====================================================
 
     if (req.query.search) {
-      const search = String(
-        req.query.search
-      ).trim();
+      const search =
+        String(
+          req.query.search
+        ).trim();
 
-      filter.$or = [
-        {
-          productName: {
-            $regex: search,
-            $options: "i",
+      if (search) {
+        const searchRegex = {
+          $regex: escapeRegex(search),
+          $options: "i",
+        };
+
+        filter.$or = [
+          {
+            productName:
+              searchRegex,
           },
-        },
-        {
-          sku: {
-            $regex: search,
-            $options: "i",
+          {
+            sku:
+              searchRegex,
           },
-        },
-        {
-          description: {
-            $regex: search,
-            $options: "i",
+          {
+            description:
+              searchRegex,
           },
-        },
-      ];
+        ];
+      }
     }
 
     // =====================================================
     // FEATURED
     // =====================================================
 
-    if (req.query.isFeatured !== undefined) {
+    const isFeatured =
+      parseBooleanQuery(
+        req.query.isFeatured
+      );
+
+    if (isFeatured !== undefined) {
       filter.isFeatured =
-        String(req.query.isFeatured).toLowerCase() ===
-        "true";
+        isFeatured;
     }
 
     // =====================================================
     // TRENDING
     // =====================================================
 
-    if (req.query.isTrending !== undefined) {
+    const isTrending =
+      parseBooleanQuery(
+        req.query.isTrending
+      );
+
+    if (isTrending !== undefined) {
       filter.isTrending =
-        String(req.query.isTrending).toLowerCase() ===
-        "true";
+        isTrending;
     }
 
     // =====================================================
     // NEW
     // =====================================================
 
-    if (req.query.isNew !== undefined) {
-      filter.isNew =
-        String(req.query.isNew).toLowerCase() ===
-        "true";
+    const isNew =
+      parseBooleanQuery(
+        req.query.isNew
+      );
+
+    if (isNew !== undefined) {
+      filter.isNew = isNew;
     }
 
     // =====================================================
     // SORT
     // =====================================================
 
-    let sort: Record<string, 1 | -1> = {
+    let sort: Record<
+      string,
+      1 | -1
+    > = {
       createdAt: -1,
     };
 
-    switch (String(req.query.sort ?? "")) {
+    switch (
+      String(
+        req.query.sort ?? ""
+      )
+    ) {
       case "price_low":
       case "price_asc":
         sort = {
@@ -299,26 +494,60 @@ export const getAll = async (
     // PAGINATION
     // =====================================================
 
-    const skip = (page - 1) * limit;
+    const skip =
+      (page - 1) * limit;
+
+    // =====================================================
+    // DEBUG LOG
+    // =====================================================
 
     console.log(
-      "🔎 Final Product Filter:",
-      JSON.stringify(filter, null, 2)
+      "================================================="
     );
 
-    const [products, total] =
-      await Promise.all([
-        Product.find(filter)
-          .sort(sort)
-          .skip(skip)
-          .limit(limit)
-          .lean(),
-
-        Product.countDocuments(filter),
-      ]);
+    console.log(
+      "[Products] GET /products"
+    );
 
     console.log(
-      `✅ Products found: ${products.length}/${total}`
+      "[Products] Query:",
+      req.query
+    );
+
+    console.log(
+      "[Products] Final filter:",
+      JSON.stringify(
+        filter,
+        null,
+        2
+      )
+    );
+
+    console.log(
+      "================================================="
+    );
+
+    // =====================================================
+    // DATABASE QUERY
+    // =====================================================
+
+    const [
+      products,
+      total,
+    ] = await Promise.all([
+      Product.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      Product.countDocuments(
+        filter
+      ),
+    ]);
+
+    console.log(
+      `[Products] Found ${products.length}/${total} products`
     );
 
     // =====================================================
@@ -327,7 +556,8 @@ export const getAll = async (
 
     return res.status(200).json({
       success: true,
-      message: "Products fetched successfully",
+      message:
+        "Products fetched successfully",
 
       data: {
         products,
@@ -338,18 +568,21 @@ export const getAll = async (
           total,
 
           totalPages:
-            Math.ceil(total / limit),
+            Math.ceil(
+              total / limit
+            ),
 
           hasNextPage:
             page <
-            Math.ceil(total / limit),
+            Math.ceil(
+              total / limit
+            ),
 
           hasPreviousPage:
             page > 1,
         },
       },
     });
-
   } catch (error) {
     console.error(
       "❌ getAll products error:",
@@ -358,10 +591,23 @@ export const getAll = async (
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch products",
+      message:
+        "Failed to fetch products",
+      data: {
+        products: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      },
     });
   }
 };
+
 // =====================================================
 // Get Product By ID
 // =====================================================
@@ -371,12 +617,18 @@ export const getById = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const { id } =
+      req.params;
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+      !mongoose.isValidObjectId(
+        id
+      )
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid product ID",
+        message:
+          "Invalid product ID",
       });
     }
 
@@ -389,7 +641,8 @@ export const getById = async (
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message:
+          "Product not found",
       });
     }
 
@@ -407,7 +660,8 @@ export const getById = async (
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch product",
+      message:
+        "Failed to fetch product",
     });
   }
 };
@@ -430,7 +684,8 @@ export const getBySku = async (
     if (!sku) {
       return res.status(400).json({
         success: false,
-        message: "SKU is required",
+        message:
+          "SKU is required",
       });
     }
 
@@ -443,7 +698,8 @@ export const getBySku = async (
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message:
+          "Product not found",
       });
     }
 
@@ -461,7 +717,8 @@ export const getBySku = async (
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch product",
+      message:
+        "Failed to fetch product",
     });
   }
 };
@@ -477,7 +734,9 @@ export const getFeatured = async (
   try {
     const limit = Math.min(
       Math.max(
-        Number(req.query.limit) || 10,
+        Number(
+          req.query.limit
+        ) || 10,
         1
       ),
       100
@@ -488,7 +747,9 @@ export const getFeatured = async (
         isActive: true,
         isFeatured: true,
       })
-        .sort({ createdAt: -1 })
+        .sort({
+          createdAt: -1,
+        })
         .limit(limit)
         .lean();
 
@@ -523,7 +784,9 @@ export const getTrending = async (
   try {
     const limit = Math.min(
       Math.max(
-        Number(req.query.limit) || 10,
+        Number(
+          req.query.limit
+        ) || 10,
         1
       ),
       100
@@ -534,7 +797,9 @@ export const getTrending = async (
         isActive: true,
         isTrending: true,
       })
-        .sort({ createdAt: -1 })
+        .sort({
+          createdAt: -1,
+        })
         .limit(limit)
         .lean();
 
@@ -562,10 +827,6 @@ export const getTrending = async (
 // New Arrivals
 // =====================================================
 
-// =====================================================
-// New Arrivals
-// =====================================================
-
 export const getNewArrivals = async (
   req: Request,
   res: Response
@@ -573,23 +834,29 @@ export const getNewArrivals = async (
   try {
     const limit = Math.min(
       Math.max(
-        Number(req.query.limit) || 10,
+        Number(
+          req.query.limit
+        ) || 10,
         1
       ),
       100
     );
 
-    const products = await Product.find({
-      isActive: true,
-      isNew: true, // ✅ IMPORTANT
-    })
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .lean();
+    const products =
+      await Product.find({
+        isActive: true,
+        isNew: true,
+      })
+        .sort({
+          createdAt: -1,
+        })
+        .limit(limit)
+        .lean();
 
     return res.status(200).json({
       success: true,
-      message: "New arrivals fetched successfully",
+      message:
+        "New arrivals fetched successfully",
       data: products,
     });
   } catch (error) {
@@ -600,10 +867,12 @@ export const getNewArrivals = async (
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch new arrivals",
+      message:
+        "Failed to fetch new arrivals",
     });
   }
 };
+
 // =====================================================
 // Create Product - ADMIN
 // =====================================================
@@ -614,7 +883,9 @@ export const create = async (
 ) => {
   try {
     const product =
-      await Product.create(req.body);
+      await Product.create(
+        req.body
+      );
 
     return res.status(201).json({
       success: true,
@@ -628,7 +899,9 @@ export const create = async (
       error
     );
 
-    if (error?.code === 11000) {
+    if (
+      error?.code === 11000
+    ) {
       return res.status(409).json({
         success: false,
         message:
@@ -654,12 +927,18 @@ export const update = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const { id } =
+      req.params;
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+      !mongoose.isValidObjectId(
+        id
+      )
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid product ID",
+        message:
+          "Invalid product ID",
       });
     }
 
@@ -678,7 +957,8 @@ export const update = async (
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message:
+          "Product not found",
       });
     }
 
@@ -694,7 +974,9 @@ export const update = async (
       error
     );
 
-    if (error?.code === 11000) {
+    if (
+      error?.code === 11000
+    ) {
       return res.status(409).json({
         success: false,
         message:
@@ -720,12 +1002,18 @@ export const deactivate = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const { id } =
+      req.params;
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+      !mongoose.isValidObjectId(
+        id
+      )
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid product ID",
+        message:
+          "Invalid product ID",
       });
     }
 
@@ -745,7 +1033,8 @@ export const deactivate = async (
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message:
+          "Product not found",
       });
     }
 
@@ -778,22 +1067,31 @@ export const remove = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const { id } =
+      req.params;
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+      !mongoose.isValidObjectId(
+        id
+      )
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid product ID",
+        message:
+          "Invalid product ID",
       });
     }
 
     const product =
-      await Product.findByIdAndDelete(id);
+      await Product.findByIdAndDelete(
+        id
+      );
 
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Product not found",
+        message:
+          "Product not found",
       });
     }
 
