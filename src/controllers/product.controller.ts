@@ -5,6 +5,10 @@ import { Product } from "../models/product.model.js";
 // =====================================================
 // Get All Products
 // =====================================================
+// =====================================================
+// Get All Products
+// =====================================================
+
 export const getAll = async (
   req: Request,
   res: Response
@@ -27,22 +31,169 @@ export const getAll = async (
       isActive: true,
     };
 
+    // =====================================================
+    // CATEGORY FILTER
+    // =====================================================
+
     if (req.query.category) {
+      const categoryValue = String(req.query.category).trim();
+
+      /*
+       * Android sends Category MongoDB _id:
+       *
+       * 6a96f6d9eae00459f59e4e50
+       *
+       * Products may store category as:
+       * - ObjectId
+       * - string ObjectId
+       * - category name
+       * - category slug
+       */
+
+      const categoryValues: any[] = [];
+
+      if (mongoose.isValidObjectId(categoryValue)) {
+        categoryValues.push(
+          new mongoose.Types.ObjectId(categoryValue)
+        );
+
+        categoryValues.push(categoryValue);
+      }
+
+      // Also allow direct category name / slug
+      categoryValues.push(categoryValue);
+
+      // Resolve MongoDB category document
+      try {
+        const Category = (
+          await import("../models/category.model.js")
+        ).Category;
+
+        const categoryDoc = await Category.findById(
+          categoryValue
+        )
+          .select("_id name slug")
+          .lean();
+
+        if (categoryDoc) {
+          categoryValues.push(categoryDoc.name);
+          categoryValues.push(categoryDoc.slug);
+          categoryValues.push(String(categoryDoc._id));
+        }
+      } catch (categoryError) {
+        console.error(
+          "⚠️ Category lookup failed:",
+          categoryError
+        );
+      }
+
+      // Remove duplicates
+      const uniqueCategoryValues = [
+        ...new Map(
+          categoryValues.map((value) => [
+            String(value),
+            value,
+          ])
+        ).values(),
+      ];
+
       filter.category = {
-        $regex: String(req.query.category).trim(),
-        $options: "i",
+        $in: uniqueCategoryValues,
       };
+
+      console.log(
+        "🟢 Product category filter:",
+        uniqueCategoryValues
+      );
     }
+
+    // =====================================================
+    // SUBCATEGORY FILTER
+    // =====================================================
 
     if (req.query.subcategory) {
-      filter.subcategory = {
-        $regex: String(req.query.subcategory).trim(),
-        $options: "i",
+      const subcategoryValue = String(
+        req.query.subcategory
+      ).trim();
+
+      /*
+       * Android currently sends:
+       *
+       * Sneakers
+       * Formal Shoes
+       * Bra
+       * Sports Bra
+       * Formal Shirts
+       * Casual Shirts
+       *
+       * DB may store:
+       *
+       * footwear-sneakers
+       * footwear-formal
+       * innerwear-bra
+       * innerwear-sports-bra
+       * shirts-formal
+       * shirts-casual
+       */
+
+      const subcategoryMap: Record<string, string[]> = {
+        sneakers: [
+          "Sneakers",
+          "footwear-sneakers",
+        ],
+
+        "formal shoes": [
+          "Formal Shoes",
+          "footwear-formal",
+        ],
+
+        bra: [
+          "Bra",
+          "innerwear-bra",
+        ],
+
+        "sports bra": [
+          "Sports Bra",
+          "innerwear-sports-bra",
+        ],
+
+        "formal shirts": [
+          "Formal Shirts",
+          "shirts-formal",
+        ],
+
+        "casual shirts": [
+          "Casual Shirts",
+          "shirts-casual",
+        ],
       };
+
+      const normalized =
+        subcategoryValue.toLowerCase();
+
+      const values =
+        subcategoryMap[normalized] ?? [
+          subcategoryValue,
+        ];
+
+      filter.subcategory = {
+        $in: values,
+      };
+
+      console.log(
+        "🟢 Product subcategory filter:",
+        values
+      );
     }
 
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
     if (req.query.search) {
-      const search = String(req.query.search).trim();
+      const search = String(
+        req.query.search
+      ).trim();
 
       filter.$or = [
         {
@@ -66,20 +217,39 @@ export const getAll = async (
       ];
     }
 
+    // =====================================================
+    // FEATURED
+    // =====================================================
+
     if (req.query.isFeatured !== undefined) {
       filter.isFeatured =
-        String(req.query.isFeatured).toLowerCase() === "true";
+        String(req.query.isFeatured).toLowerCase() ===
+        "true";
     }
+
+    // =====================================================
+    // TRENDING
+    // =====================================================
 
     if (req.query.isTrending !== undefined) {
       filter.isTrending =
-        String(req.query.isTrending).toLowerCase() === "true";
+        String(req.query.isTrending).toLowerCase() ===
+        "true";
     }
+
+    // =====================================================
+    // NEW
+    // =====================================================
 
     if (req.query.isNew !== undefined) {
       filter.isNew =
-        String(req.query.isNew).toLowerCase() === "true";
+        String(req.query.isNew).toLowerCase() ===
+        "true";
     }
+
+    // =====================================================
+    // SORT
+    // =====================================================
 
     let sort: Record<string, 1 | -1> = {
       createdAt: -1,
@@ -88,60 +258,103 @@ export const getAll = async (
     switch (String(req.query.sort ?? "")) {
       case "price_low":
       case "price_asc":
-        sort = { sellingPrice: 1 };
+        sort = {
+          sellingPrice: 1,
+        };
         break;
 
       case "price_high":
       case "price_desc":
-        sort = { sellingPrice: -1 };
+        sort = {
+          sellingPrice: -1,
+        };
         break;
 
       case "newest":
-        sort = { createdAt: -1 };
+        sort = {
+          createdAt: -1,
+        };
         break;
 
       case "oldest":
-        sort = { createdAt: 1 };
+        sort = {
+          createdAt: 1,
+        };
         break;
 
       case "name_asc":
-        sort = { productName: 1 };
+        sort = {
+          productName: 1,
+        };
         break;
 
       case "name_desc":
-        sort = { productName: -1 };
+        sort = {
+          productName: -1,
+        };
         break;
     }
 
+    // =====================================================
+    // PAGINATION
+    // =====================================================
+
     const skip = (page - 1) * limit;
 
-    const [products, total] = await Promise.all([
-      Product.find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+    console.log(
+      "🔎 Final Product Filter:",
+      JSON.stringify(filter, null, 2)
+    );
 
-      Product.countDocuments(filter),
-    ]);
+    const [products, total] =
+      await Promise.all([
+        Product.find(filter)
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+
+        Product.countDocuments(filter),
+      ]);
+
+    console.log(
+      `✅ Products found: ${products.length}/${total}`
+    );
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
 
     return res.status(200).json({
       success: true,
       message: "Products fetched successfully",
+
       data: {
         products,
+
         pagination: {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit),
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPreviousPage: page > 1,
+
+          totalPages:
+            Math.ceil(total / limit),
+
+          hasNextPage:
+            page <
+            Math.ceil(total / limit),
+
+          hasPreviousPage:
+            page > 1,
         },
       },
     });
+
   } catch (error) {
-    console.error("❌ getAll products error:", error);
+    console.error(
+      "❌ getAll products error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
