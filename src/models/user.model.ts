@@ -19,18 +19,19 @@ export interface IUserAddress {
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
-
   name: string;
   email: string;
   phone: string;
-
   passwordHash: string;
 
   role: "CUSTOMER" | "ADMIN";
-
   isActive: boolean;
 
   addresses: IUserAddress[];
+
+  // Refresh token
+  refreshTokenHash?: string;
+  refreshTokenExpiresAt?: Date;
 
   createdAt: Date;
   updatedAt: Date;
@@ -140,6 +141,21 @@ const userSchema = new Schema<IUser>(
     addresses: {
       type: [addressSchema],
       default: [],
+    },
+
+    // ==========================================
+    // REFRESH TOKEN
+    // ==========================================
+
+    refreshTokenHash: {
+      type: String,
+      default: undefined,
+      select: false,
+    },
+
+    refreshTokenExpiresAt: {
+      type: Date,
+      default: undefined,
     },
   },
   {

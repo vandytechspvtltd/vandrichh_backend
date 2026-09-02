@@ -15,16 +15,53 @@ interface AuthRequest extends Request {
   };
 }
 
-const generateToken = (userId: string) => {
+const ACCESS_TOKEN_EXPIRES_IN = "15m";
+const REFRESH_TOKEN_DAYS = 30;
+
+const generateAccessToken = (userId: string) => {
   return jwt.sign(
     {
       userId,
+      type: "access",
     },
     env.JWT_SECRET,
     {
-      expiresIn: "7d",
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     }
   );
+};
+
+const generateRefreshToken = () => {
+  return crypto.randomBytes(64).toString("hex");
+};
+
+const hashRefreshToken = (token: string) => {
+  return crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+};
+
+const createAuthTokens = async (userId: string) => {
+  const accessToken = generateAccessToken(userId);
+  const refreshToken = generateRefreshToken();
+
+  const refreshTokenHash = hashRefreshToken(refreshToken);
+  const refreshTokenExpiresAt = new Date(
+    Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000
+  );
+
+  await User.findByIdAndUpdate(userId, {
+    $set: {
+      refreshTokenHash,
+      refreshTokenExpiresAt,
+    },
+  });
+
+  return {
+    accessToken,
+    refreshToken,
+  };
 };
 
 const sanitizeUser = (user: any) => {
@@ -33,6 +70,8 @@ const sanitizeUser = (user: any) => {
     : { ...user };
 
   delete userObject.passwordHash;
+  delete userObject.refreshTokenHash;
+  delete userObject.refreshTokenExpiresAt;
 
   return userObject;
 };
@@ -119,16 +158,17 @@ export const register = async (
       isActive: true,
     });
 
-    const token = generateToken(
-      user._id.toString()
-    );
+    const { accessToken, refreshToken } =
+      await createAuthTokens(user._id.toString());
 
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
       data: {
         user: sanitizeUser(user),
-        token,
+        accessToken,
+        refreshToken,
+        token: accessToken,
       },
     });
   } catch (error: any) {
@@ -344,17 +384,17 @@ export const verifyOtp = async (
         });
       }
 
-      const token = generateToken(
-        user._id.toString()
-      );
+      const { accessToken, refreshToken } =
+        await createAuthTokens(user._id.toString());
 
       return res.status(200).json({
         success: true,
-        message:
-          "OTP verified successfully",
+        message: "OTP verified successfully",
         data: {
           user: sanitizeUser(user),
-          token,
+          accessToken,
+          refreshToken,
+          token: accessToken,
         },
       });
     }
@@ -380,6 +420,114 @@ export const verifyOtp = async (
     return res.status(500).json({
       success: false,
       message: "Failed to verify OTP",
+    });
+  }
+};
+
+/**
+ * Refresh access token
+ * POST /auth/refresh
+ */
+export const refreshAccessToken = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const refreshToken = String(
+      req.body?.refreshToken ?? ""
+    ).trim();
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Refresh token is required",
+      });
+    }
+
+    const refreshTokenHash = hashRefreshToken(refreshToken);
+
+    const user = await User.findOne({
+      refreshTokenHash,
+      refreshTokenExpiresAt: {
+        $gt: new Date(),
+      },
+    }).select(
+      "+refreshTokenHash +refreshTokenExpiresAt"
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired refresh token",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been deactivated",
+      });
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } =
+      await createAuthTokens(user._id.toString());
+
+    return res.status(200).json({
+      success: true,
+      message: "Token refreshed successfully",
+      data: {
+        user: sanitizeUser(user),
+        accessToken,
+        refreshToken: newRefreshToken,
+        token: accessToken,
+      },
+    });
+  } catch (error) {
+    console.error("Refresh token error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to refresh token",
+    });
+  }
+};
+
+/**
+ * Logout
+ * POST /auth/logout
+ */
+export const logout = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const userId =
+      req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    await User.findByIdAndUpdate(userId, {
+      $unset: {
+        refreshTokenHash: 1,
+        refreshTokenExpiresAt: 1,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to logout",
     });
   }
 };

@@ -11,12 +11,6 @@ interface AuthRequest extends Request {
 }
 
 // =====================================================
-// TEMPORARY DEMO USER
-// =====================================================
-
-const DEMO_USER_ID = "6a95ab53bb5442202d169664";
-
-// =====================================================
 // GET USER ID
 // =====================================================
 
@@ -25,15 +19,11 @@ const getUserId = (req: AuthRequest): string => {
     req.user?.id ||
     req.user?._id;
 
-  if (authenticatedUserId) {
-    return authenticatedUserId;
+  if (!authenticatedUserId) {
+    throw new Error("Authentication required");
   }
 
-  console.log(
-    "[Cart] No authorization found. Using demo user."
-  );
-
-  return DEMO_USER_ID;
+  return authenticatedUserId;
 };
 
 // =====================================================
