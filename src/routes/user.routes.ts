@@ -2,14 +2,21 @@ import { Router } from "express";
 
 import * as userController from "../controllers/user.controller.js";
 
-import { authMiddleware } from "../middleware/auth.middleware.js";
+import {
+  authMiddleware,
+} from "../middleware/auth.middleware.js";
 
 const router = Router();
+
+// =====================================================
+// AUTHENTICATION
+// All user routes require logged-in user
+// =====================================================
 
 router.use(authMiddleware);
 
 // =====================================================
-// Get User Profile
+// PROFILE
 // =====================================================
 
 /**
@@ -17,51 +24,62 @@ router.use(authMiddleware);
  * /user/profile:
  *   get:
  *     summary: Get current user profile
- *     description: Returns the profile of the currently authenticated user.
  *     tags:
  *       - User
  *     security:
  *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Profile fetched successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Profile fetched successfully
- *                 data:
- *                   $ref: '#/components/schemas/User'
- *       401:
- *         description: Authentication required
- *       403:
- *         description: Account is deactivated
- *       404:
- *         description: User not found
- *       500:
- *         description: Server error
  */
 router.get(
   "/profile",
   userController.getProfile
 );
 
-// =====================================================
-// Update User Profile
-// =====================================================
-
 /**
  * @swagger
  * /user/profile:
  *   put:
  *     summary: Update current user profile
- *     description: Updates the authenticated user's name or phone number.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put(
+  "/profile",
+  userController.updateProfile
+);
+
+// =====================================================
+// ADDRESSES
+// =====================================================
+
+/**
+ * @swagger
+ * /user/addresses:
+ *   get:
+ *     summary: Get current user's addresses
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Addresses fetched successfully
+ *       401:
+ *         description: Authentication required
+ *       404:
+ *         description: User not found
+ */
+router.get(
+  "/addresses",
+  userController.getAddresses
+);
+
+/**
+ * @swagger
+ * /user/addresses:
+ *   post:
+ *     summary: Add a new address for current user
  *     tags:
  *       - User
  *     security:
@@ -72,43 +90,48 @@ router.get(
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - fullName
+ *               - phone
+ *               - street
+ *               - city
+ *               - state
+ *               - pincode
  *             properties:
- *               name:
+ *               fullName:
  *                 type: string
- *                 example: John Smith
+ *                 example: Test User
  *               phone:
  *                 type: string
- *                 example: "9876543211"
+ *                 example: "9876543210"
+ *               street:
+ *                 type: string
+ *                 example: Golf Course Road
+ *               city:
+ *                 type: string
+ *                 example: Gurugram
+ *               state:
+ *                 type: string
+ *                 example: Haryana
+ *               pincode:
+ *                 type: string
+ *                 example: "122002"
+ *               isDefault:
+ *                 type: boolean
+ *                 example: true
  *     responses:
- *       200:
- *         description: Profile updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Profile updated successfully
- *                 data:
- *                   $ref: '#/components/schemas/User'
+ *       201:
+ *         description: Address added successfully
  *       400:
- *         description: Invalid update data
+ *         description: Invalid address data
  *       401:
  *         description: Authentication required
  *       404:
  *         description: User not found
- *       409:
- *         description: Phone number already registered
- *       500:
- *         description: Server error
  */
-router.put(
-  "/profile",
-  userController.updateProfile
+router.post(
+  "/addresses",
+  userController.addAddress
 );
 
 export default router;
