@@ -156,10 +156,14 @@ export const getMyOrders = async (
   try {
     const userId = getUserId(req);
 
+    console.log("========== GET MY ORDERS ==========");
+    console.log("Authenticated user:", userId);
+
     if (!userId) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
+        data: [],
       });
     }
 
@@ -169,6 +173,14 @@ export const getMyOrders = async (
       .sort({ createdAt: -1 })
       .populate("items.product")
       .lean();
+
+    console.log(`Orders found: ${orders.length}`);
+
+    orders.forEach((order: any, index: number) => {
+      console.log(
+        `Order ${index + 1}: ${order._id} | ${order.orderNumber} | ${order.orderStatus}`
+      );
+    });
 
     return res.status(200).json({
       success: true,
@@ -181,10 +193,10 @@ export const getMyOrders = async (
     return res.status(500).json({
       success: false,
       message: "Failed to fetch orders",
+      data: [],
     });
   }
 };
-
 export const getOrderById = async (
   req: AuthRequest,
   res: Response
