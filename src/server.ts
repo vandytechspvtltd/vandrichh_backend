@@ -1,8 +1,9 @@
 import dotenv from "dotenv";
+import dns from "dns";
 
 // Load .env before importing modules that depend on environment variables
 dotenv.config();
-
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import { loadEnv, getEnv } from "./config/env.js";
 import { connectDatabase } from "./config/database.js";
 
