@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import dns from "dns";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
@@ -6,6 +7,7 @@ import { Admin, AdminRole } from "../src/models/admin.model.js";
 import { loadEnv } from "../src/config/env.js";
 
 dotenv.config();
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 loadEnv();
 
 const [name, email, password, role = "ADMIN"] = process.argv.slice(2);
