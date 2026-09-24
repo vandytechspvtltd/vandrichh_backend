@@ -17,6 +17,7 @@ import wishlistRoutes from "./routes/wishlist.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { notFoundMiddleware } from "./middleware/notFound.middleware.js";
@@ -119,6 +120,21 @@ app.use(
 app.use(
   "/api/v1/banners",
   bannerRoutes
+);
+
+app.use(
+  "/api/banners",
+  bannerRoutes
+);
+
+app.use(
+  "/api/v1/admin",
+  adminRoutes
+);
+
+app.use(
+  "/api/admin",
+  adminRoutes
 );
 
 app.use(

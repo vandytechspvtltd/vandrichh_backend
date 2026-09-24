@@ -3,6 +3,9 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface IBanner extends Document {
   _id: Types.ObjectId;
   title: string;
+  description: string;
+  redirectUrl?: string;
+  displayOrder: number;
   subtitle?: string;
   imageUrl: string;
   link?: string;
@@ -17,6 +20,18 @@ const bannerSchema = new Schema<IBanner>(
     title: {
       type: String,
       required: true,
+      trim: true,
+    },
+
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    redirectUrl: {
+      type: String,
+      default: "",
       trim: true,
     },
 
@@ -47,13 +62,18 @@ const bannerSchema = new Schema<IBanner>(
       type: Number,
       default: 0,
     },
+
+    displayOrder: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-bannerSchema.index({ isActive: 1, sortOrder: 1 });
+bannerSchema.index({ isActive: 1, displayOrder: 1 });
 
 export const Banner = mongoose.model<IBanner>(
   "Banner",

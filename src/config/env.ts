@@ -5,8 +5,11 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   MONGODB_URI: z.string().url("MongoDB URI must be a valid URL"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+  ADMIN_JWT_SECRET: z.string().min(32).optional(),
   JWT_EXPIRES_IN: z.string().default("7d"),
+  ADMIN_JWT_EXPIRES_IN: z.string().default("8h"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  IMAGE_BASE_URL: z.string().url().optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 });
 

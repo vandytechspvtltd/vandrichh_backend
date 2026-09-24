@@ -9,6 +9,7 @@ export const getBanners = async (
       isActive: true,
     })
       .sort({
+        displayOrder: 1,
         sortOrder: 1,
         createdAt: -1,
       })
@@ -17,6 +18,9 @@ export const getBanners = async (
     const data = banners.map((banner) => ({
       ...banner,
       _id: banner._id.toString(),
+      description: banner.description || banner.subtitle || "",
+      redirectUrl: banner.redirectUrl || banner.link || "",
+      displayOrder: banner.displayOrder ?? banner.sortOrder ?? 0,
     }));
 
     return res.status(200).json({

@@ -21,8 +21,12 @@ const options = {
         description: "Development Server",
       },
       {
-        url: "https://api.vandrichh.com/api/v1",
+        url: "https://vandrichhapi.vandytech.com/api/v1",
         description: "Production Server",
+      },
+      {
+        url: "https://vandrichhapi.vandytech.com/api",
+        description: "Production admin and public compatibility routes",
       },
     ],
 
@@ -59,6 +63,34 @@ const options = {
         name: "Banners",
         description: "Banner APIs",
       },
+      {
+        name: "Admin",
+        description: "Admin dashboard APIs",
+      },
+      {
+        name: "Admin Auth",
+        description: "Separate administrator authentication",
+      },
+      {
+        name: "Admin Products",
+        description: "Administrator product management",
+      },
+      {
+        name: "Admin Categories",
+        description: "Administrator category management",
+      },
+      {
+        name: "Admin Orders",
+        description: "Administrator order management",
+      },
+      {
+        name: "Admin Users",
+        description: "Administrator customer management",
+      },
+      {
+        name: "Admin Banners",
+        description: "Administrator banner management",
+      },
     ],
 
     components: {
@@ -81,6 +113,42 @@ const options = {
       // =====================================================
 
       schemas: {
+        Admin: {
+          type: "object",
+          properties: {
+            _id: { type: "string" },
+            name: { type: "string", example: "Store Admin" },
+            email: { type: "string", format: "email", example: "admin@example.com" },
+            role: { type: "string", enum: ["ADMIN", "SUPER_ADMIN"] },
+            isActive: { type: "boolean" },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+          },
+        },
+        Banner: {
+          type: "object",
+          required: ["imageUrl", "title"],
+          properties: {
+            _id: { type: "string" },
+            imageUrl: { type: "string", format: "uri" },
+            title: { type: "string" },
+            description: { type: "string" },
+            redirectUrl: { type: "string", format: "uri" },
+            displayOrder: { type: "integer", minimum: 0 },
+            isActive: { type: "boolean" },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+          },
+        },
+        AdminProductInput: {
+          allOf: [{ $ref: "#/components/schemas/Product" }],
+        },
+        AdminCategoryInput: {
+          allOf: [{ $ref: "#/components/schemas/Category" }],
+        },
+        AdminBannerInput: {
+          allOf: [{ $ref: "#/components/schemas/Banner" }],
+        },
         // ===================================================
         // Product
         // ===================================================

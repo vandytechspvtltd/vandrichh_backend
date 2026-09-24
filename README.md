@@ -169,7 +169,12 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/vandrichh?retryW
 
 # Authentication
 JWT_SECRET=your_very_secret_jwt_key_change_this_in_production_minimum_32_characters
+ADMIN_JWT_SECRET=your_separate_admin_jwt_key_change_this_in_production_minimum_32_characters
 JWT_EXPIRES_IN=7d
+ADMIN_JWT_EXPIRES_IN=8h
+
+# External image storage
+IMAGE_BASE_URL=https://cdn.example.com
 
 # CORS
 CORS_ORIGIN=http://localhost:3000
@@ -186,7 +191,10 @@ LOG_LEVEL=debug
 | `NODE_ENV` | No | development | Environment (development/production/test) |
 | `MONGODB_URI` | Yes | - | MongoDB connection string |
 | `JWT_SECRET` | Yes | - | Secret key for signing JWTs (min 32 chars) |
+| `ADMIN_JWT_SECRET` | No | `JWT_SECRET` | Separate secret for admin JWTs (min 32 chars) |
 | `JWT_EXPIRES_IN` | No | 7d | JWT expiration time |
+| `ADMIN_JWT_EXPIRES_IN` | No | 8h | Admin JWT expiration time |
+| `IMAGE_BASE_URL` | No | - | Base URL for externally stored image object paths |
 | `CORS_ORIGIN` | No | http://localhost:3000 | Frontend origin for CORS |
 | `LOG_LEVEL` | No | info | Logging level (debug/info/warn/error) |
 
@@ -296,6 +304,36 @@ curl -X POST http://localhost:5000/api/v1/auth/login \
 ```bash
 curl http://localhost:5000/api/v1/products
 ```
+
+## Admin Panel Integration
+
+Create the first administrator after configuring MongoDB:
+
+```bash
+npm run admin:create -- "Store Admin" admin@example.com "change-this-password" SUPER_ADMIN
+```
+
+Admin routes are available under `/api/admin` and the versioned alias `/api/v1/admin`. The public active-banner endpoint is available under `/api/banners` and remains available at `/api/v1/banners` for the Android app. Admin requests use `Authorization: Bearer <admin-jwt>`; customer JWTs are rejected.
+
+```bash
+# Login
+curl -X POST https://vandrichhapi.vandytech.com/api/admin/login \
+   -H "Content-Type: application/json" \
+   -d '{"email":"admin@example.com","password":"change-this-password"}'
+
+# Set the token returned by login
+set ADMIN_TOKEN=<admin-jwt>
+
+# Dashboard, products, categories, users, orders, and banners
+curl https://vandrichhapi.vandytech.com/api/admin/dashboard -H "Authorization: Bearer %ADMIN_TOKEN%"
+curl https://vandrichhapi.vandytech.com/api/admin/products -H "Authorization: Bearer %ADMIN_TOKEN%"
+curl -X POST https://vandrichhapi.vandytech.com/api/admin/categories -H "Authorization: Bearer %ADMIN_TOKEN%" -H "Content-Type: application/json" -d '{"name":"Shirts","slug":"shirts"}'
+curl https://vandrichhapi.vandytech.com/api/admin/users -H "Authorization: Bearer %ADMIN_TOKEN%"
+curl https://vandrichhapi.vandytech.com/api/admin/orders -H "Authorization: Bearer %ADMIN_TOKEN%"
+curl https://vandrichhapi.vandytech.com/api/admin/banners -H "Authorization: Bearer %ADMIN_TOKEN%"
+```
+
+Zoho Creator should upload images to an external object/CDN provider and submit the resulting `imageUrl` (or an object path resolved with `IMAGE_BASE_URL`) in product or banner JSON. Image binaries are not stored in MongoDB.
 
 ## API Documentation
 

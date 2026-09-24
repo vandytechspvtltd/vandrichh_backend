@@ -5,9 +5,11 @@ import { ZodError } from "zod";
 export interface ApiRequest extends Request {
   userId?: string;
   userRole?: "CUSTOMER" | "ADMIN";
+  adminId?: string;
+  adminRole?: "ADMIN" | "SUPER_ADMIN";
 }
 
-export type AsyncHandler = (req: ApiRequest, res: Response, next: NextFunction) => Promise<void>;
+export type AsyncHandler = (req: ApiRequest, res: Response, next: NextFunction) => Promise<any>;
 
 export function asyncHandler(fn: AsyncHandler) {
   return (req: ApiRequest, res: Response, next: NextFunction) => {
