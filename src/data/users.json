@@ -1,0 +1,16 @@
+[
+  {
+    "role": "CUSTOMER",
+    "isActive": true,
+    "addresses": [],
+    "name": "Customer",
+    "email": "phone_9876543210_86640760-a3a3-43d3-a9b8-8f4c0a208c56@vandrichh.local",
+    "phone": "9876543210",
+    "passwordHash": "$2a$12$IgBwf31Ag4mos25MPXbruuk5BcAyZq7PpXkCR.6hwHs931DG0Di9C",
+    "_id": "user_001",
+    "createdAt": "2026-10-03T10:28:00.470Z",
+    "updatedAt": "2026-10-03T10:29:04.631Z",
+    "refreshTokenHash": "5babf4daef84f5fcc28e0872c9f6fc11463a4374019e3ae007ecf7db06b2b8d4",
+    "refreshTokenExpiresAt": "2026-11-02T10:29:04.631Z"
+  }
+]

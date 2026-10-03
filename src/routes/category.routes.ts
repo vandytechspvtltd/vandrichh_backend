@@ -54,8 +54,8 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: Category MongoDB ObjectId
- *         example: "65f123456789abcdef123456"
+ *         description: Category local string ID
+ *         example: "cat_001"
  *     responses:
  *       200:
  *         description: Category fetched successfully
@@ -152,8 +152,8 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: Category MongoDB ObjectId
- *         example: "65f123456789abcdef123456"
+ *         description: Category local string ID
+ *         example: "cat_001"
  *     requestBody:
  *       required: true
  *       content:
@@ -220,8 +220,8 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
- *         description: Category MongoDB ObjectId
- *         example: "65f123456789abcdef123456"
+ *         description: Category local string ID
+ *         example: "cat_001"
  *     responses:
  *       200:
  *         description: Category deleted successfully

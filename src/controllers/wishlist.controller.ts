@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { Request, Response } from "express";
 
 import { Wishlist } from "../models/wishlist.model.js";
@@ -103,16 +102,14 @@ export const toggleWishlist = async (
       });
     }
 
-    // Validate MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
+    if (typeof productId !== "string" || !productId) {
       return res.status(400).json({
         success: false,
         message: "Invalid product ID",
       });
     }
 
-    const productObjectId =
-      new mongoose.Types.ObjectId(productId);
+    const productRecordId = productId;
 
     let wishlist = await Wishlist.findOne({
       user: userId,
@@ -125,7 +122,7 @@ export const toggleWishlist = async (
     if (!wishlist) {
       wishlist = await Wishlist.create({
         user: userId,
-        products: [productObjectId],
+        products: [productRecordId],
       });
 
       return res.status(200).json({
@@ -161,7 +158,7 @@ export const toggleWishlist = async (
     // =====================================================
 
     else {
-      wishlist.products.push(productObjectId);
+      wishlist.products.push(productRecordId);
     }
 
     await wishlist.save();

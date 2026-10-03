@@ -1,69 +1,9 @@
-import mongoose, {
-  Schema,
-  Document,
-  Types,
-} from "mongoose";
+import { createJsonModel, registerJsonModel } from "../utils/jsonModel.js";
 
-export interface ICategory extends Document {
-  _id: Types.ObjectId;
+export interface ICategory extends Record<string, any> {}
 
-  name: string;
-  slug: string;
-  description: string;
-  image: string;
+export const Category = createJsonModel("categories", "cat", {
+  description: "", image: "", isActive: true,
+}, { uniqueFields: ["slug"] });
 
-  isActive: boolean;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const categorySchema = new Schema<ICategory>(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    slug: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-
-    description: {
-      type: String,
-      default: "",
-    },
-
-    image: {
-      type: String,
-      default: "",
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-categorySchema.index(
-  { slug: 1 },
-  { unique: true }
-);
-
-categorySchema.index({
-  isActive: 1,
-});
-
-export const Category = mongoose.model<ICategory>(
-  "Category",
-  categorySchema
-);
+registerJsonModel("Category", Category);

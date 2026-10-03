@@ -249,7 +249,7 @@ router.get(
  * /products/{id}:
  *   get:
  *     summary: Get product by ID
- *     description: Get an active product using its MongoDB ObjectId.
+ *     description: Get an active product using its local string ID.
  *     tags:
  *       - Products
  *     security: []
@@ -259,7 +259,7 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         example: 64f123456789abcdef123456
+ *         example: prod_001
  *     responses:
  *       200:
  *         description: Product fetched successfully
@@ -402,7 +402,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         example: 64f123456789abcdef123456
+ *         example: prod_001
  *     requestBody:
  *       required: true
  *       content:
@@ -510,7 +510,7 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
- *         example: 64f123456789abcdef123456
+ *         example: prod_001
  *     responses:
  *       200:
  *         description: Product deactivated successfully
@@ -552,7 +552,7 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
- *         example: 64f123456789abcdef123456
+ *         example: prod_001
  *     responses:
  *       200:
  *         description: Product deleted successfully

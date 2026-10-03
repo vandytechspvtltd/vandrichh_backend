@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
+import { startJsonTransaction } from "../utils/jsonModel.js";
 
 import { Order, OrderStatus } from "../models/order.model.js";
 import { Cart } from "../models/cart.model.js";
@@ -19,7 +19,7 @@ export const create = async (
   req: AuthRequest,
   res: Response
 ) => {
-  const session = await mongoose.startSession();
+  const session = await startJsonTransaction();
 
   try {
     const userId = getUserId(req);

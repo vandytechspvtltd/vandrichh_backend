@@ -1,9 +1,9 @@
 import { z } from "zod";
+import { randomBytes } from "node:crypto";
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  MONGODB_URI: z.string().url("MongoDB URI must be a valid URL"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   ADMIN_JWT_SECRET: z.string().min(32).optional(),
   JWT_EXPIRES_IN: z.string().default("7d"),
@@ -20,7 +20,16 @@ let env: Env | null = null;
 export function loadEnv(): Env {
   if (env) return env;
 
-  const parsed = envSchema.safeParse(process.env);
+  const environment = { ...process.env };
+  const usesTemporaryJwtSecret =
+    !environment.JWT_SECRET && environment.NODE_ENV !== "production";
+
+  if (usesTemporaryJwtSecret) {
+    environment.JWT_SECRET = randomBytes(32).toString("hex");
+    console.warn("JWT_SECRET is unset; using a temporary development secret.");
+  }
+
+  const parsed = envSchema.safeParse(environment);
 
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;

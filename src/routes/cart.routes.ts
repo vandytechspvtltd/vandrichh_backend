@@ -64,7 +64,7 @@ router.get(
  *             properties:
  *               productId:
  *                 type: string
- *                 example: "65f123456789abcdef123456"
+ *                 example: "prod_001"
  *               quantity:
  *                 type: integer
  *                 minimum: 1
@@ -113,7 +113,7 @@ router.post(
  *         schema:
  *           type: string
  *         description: Cart item product ID
- *         example: "65f123456789abcdef123456"
+ *         example: "prod_001"
  *     requestBody:
  *       required: true
  *       content:
@@ -169,7 +169,7 @@ router.put(
  *         schema:
  *           type: string
  *         description: Cart item product ID
- *         example: "65f123456789abcdef123456"
+ *         example: "prod_001"
  *     responses:
  *       200:
  *         description: Cart item removed successfully

@@ -1,68 +1,7 @@
-import mongoose, {
-  Schema,
-  Types,
-} from "mongoose";
+import { createJsonModel, registerJsonModel } from "../utils/jsonModel.js";
 
-export interface IOtp {
-  _id: Types.ObjectId;
-  phone: string;
-  otpHash: string;
-  purpose: "LOGIN";
-  expiresAt: Date;
-  attempts: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export interface IOtp extends Record<string, any> {}
 
-const otpSchema =
-  new Schema<IOtp>(
-    {
-      phone: {
-        type: String,
-        required: true,
-        trim: true,
-        index: true,
-      },
+export const Otp = createJsonModel("otps", "otp", { attempts: 0 });
 
-      otpHash: {
-        type: String,
-        required: true,
-      },
-
-      purpose: {
-        type: String,
-        enum: ["LOGIN"],
-        required: true,
-      },
-
-      expiresAt: {
-        type: Date,
-        required: true,
-        index: true,
-      },
-
-      attempts: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-    },
-    {
-      timestamps: true,
-    }
-  );
-
-otpSchema.index(
-  {
-    expiresAt: 1,
-  },
-  {
-    expireAfterSeconds: 0,
-  }
-);
-
-export const Otp =
-  mongoose.model<IOtp>(
-    "Otp",
-    otpSchema
-  );
+registerJsonModel("Otp", Otp);

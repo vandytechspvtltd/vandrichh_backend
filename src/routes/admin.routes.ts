@@ -103,7 +103,7 @@ router.post("/products", asyncHandler(controller.createProduct));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Product fetched }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Product not found }
@@ -130,7 +130,7 @@ router.post("/products", asyncHandler(controller.createProduct));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Product deleted }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Product not found }
@@ -149,7 +149,7 @@ router.delete("/products/:id", asyncHandler(controller.deleteProduct));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Product deactivated }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Product not found }
@@ -195,7 +195,7 @@ router.post("/categories", asyncHandler(controller.createCategory));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Category fetched }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Category not found }
@@ -222,7 +222,7 @@ router.post("/categories", asyncHandler(controller.createCategory));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Category deactivated }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Category not found }
@@ -255,7 +255,7 @@ router.get("/orders", asyncHandler(controller.listOrders));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Order fetched }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Order not found }
@@ -275,7 +275,7 @@ router.get("/orders", asyncHandler(controller.listOrders));
  *               orderStatus: { type: string, enum: [PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED] }
  *     responses:
  *       200: { description: Order status updated }
- *       400: { description: Invalid ObjectId or status }
+ *       400: { description: Invalid ID or status }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Order not found }
@@ -302,7 +302,7 @@ router.put("/orders/:id/status", asyncHandler(controller.updateOrderStatus));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: User fetched }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: User not found }
@@ -342,7 +342,7 @@ router.get("/users/:id", asyncHandler(controller.getUser));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Banner fetched }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Banner not found }
@@ -368,7 +368,7 @@ router.get("/users/:id", asyncHandler(controller.getUser));
  *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
  *     responses:
  *       200: { description: Banner deleted }
- *       400: { description: Invalid ObjectId }
+ *       400: { description: Invalid ID }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
  *       404: { description: Banner not found }

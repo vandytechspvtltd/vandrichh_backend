@@ -8,7 +8,7 @@ const options = {
       title: "Vandrichh E-commerce API",
       version: "1.0.0",
       description:
-        "Complete REST API for Vandrichh e-commerce platform with authentication, products, categories, cart, orders, users, wishlist and banners.",
+        "Complete REST API for Vandrichh e-commerce platform. Records are stored in local JSON files and use prefixed string IDs such as prod_001 and user_001.",
       contact: {
         name: "Vandrichh Support",
         email: "support@vandrichh.com",
@@ -116,7 +116,7 @@ const options = {
         Admin: {
           type: "object",
           properties: {
-            _id: { type: "string" },
+            _id: { type: "string", example: "admin_001" },
             name: { type: "string", example: "Store Admin" },
             email: { type: "string", format: "email", example: "admin@example.com" },
             role: { type: "string", enum: ["ADMIN", "SUPER_ADMIN"] },
@@ -129,7 +129,7 @@ const options = {
           type: "object",
           required: ["imageUrl", "title"],
           properties: {
-            _id: { type: "string" },
+            _id: { type: "string", example: "banner_001" },
             imageUrl: { type: "string", format: "uri" },
             title: { type: "string" },
             description: { type: "string" },
@@ -158,7 +158,7 @@ const options = {
           properties: {
             _id: {
               type: "string",
-              example: "65f123456789abcdef123456",
+              example: "prod_001",
             },
 
             sku: {
@@ -282,7 +282,7 @@ const options = {
           properties: {
             _id: {
               type: "string",
-              example: "65f123456789abcdef123456",
+              example: "user_001",
             },
 
             name: {
@@ -340,7 +340,7 @@ const options = {
           properties: {
             _id: {
               type: "string",
-              example: "65f987654321abcdef654321",
+              example: "addr_001",
             },
 
             name: {
@@ -399,7 +399,7 @@ const options = {
           properties: {
             _id: {
               type: "string",
-              example: "65f123456789abcdef123456",
+              example: "cat_001",
             },
 
             name: {
@@ -476,10 +476,12 @@ const options = {
           properties: {
             _id: {
               type: "string",
+              example: "cart_001",
             },
 
             user: {
               type: "string",
+              example: "user_001",
             },
 
             items: {
@@ -510,7 +512,7 @@ const options = {
           properties: {
             product: {
               type: "string",
-              example: "65f123456789abcdef123456",
+              example: "prod_001",
             },
 
             productSnapshot: {
@@ -626,10 +628,12 @@ const options = {
           properties: {
             _id: {
               type: "string",
+              example: "order_001",
             },
 
             user: {
               type: "string",
+              example: "user_001",
             },
 
             items: {

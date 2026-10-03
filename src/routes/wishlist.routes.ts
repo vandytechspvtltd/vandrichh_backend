@@ -53,7 +53,7 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: Product MongoDB ID
+ *         description: Product local string ID
  *     responses:
  *       200:
  *         description: Wishlist updated successfully

@@ -23,6 +23,7 @@ export function authMiddleware(req: ApiRequest, res: Response, next: NextFunctio
 
     req.userId = decoded.userId;
     req.userRole = decoded.userRole;
+    req.user = { id: decoded.userId, _id: decoded.userId };
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {

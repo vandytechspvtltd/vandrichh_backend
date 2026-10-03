@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
 import { Cart } from "../models/cart.model.js";
 import { Product } from "../models/product.model.js";
 
@@ -36,13 +35,6 @@ export const getCart = async (
 ) => {
   try {
     const userId = getUserId(req);
-
-    if (!mongoose.isValidObjectId(userId)) {
-      return res.status(500).json({
-        success: false,
-        message: "Invalid cart user",
-      });
-    }
 
     console.log(
       "[Cart] GET cart for user:",
@@ -119,20 +111,12 @@ export const addItem = async (
     // USER ID
     // =================================================
 
-    if (!mongoose.isValidObjectId(userId)) {
-      return res.status(500).json({
-        success: false,
-        message: "Invalid cart user",
-      });
-    }
-
     // =================================================
     // PRODUCT ID
     // =================================================
 
     if (
-      !productId ||
-      !mongoose.isValidObjectId(productId)
+      !productId || typeof productId !== "string"
     ) {
       return res.status(400).json({
         success: false,
@@ -325,10 +309,7 @@ export const addItem = async (
       );
 
       cart.items.push({
-        product:
-          new mongoose.Types.ObjectId(
-            productId
-          ),
+        product: productId,
         quantity,
         selectedSize:
           selectedSize ?? null,
@@ -435,15 +416,6 @@ export const updateItem = async (
       colour !== undefined
         ? colour
         : selectedColour;
-
-    if (
-      !mongoose.isValidObjectId(userId)
-    ) {
-      return res.status(500).json({
-        success: false,
-        message: "Invalid cart user",
-      });
-    }
 
     if (
       !Number.isInteger(quantity) ||

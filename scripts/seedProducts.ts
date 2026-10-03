@@ -1,90 +1,65 @@
-import dotenv from "dotenv";
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
-import mongoose from "mongoose";
-import { Product } from "../src/models/Product.js";
-import { loadEnv } from "../src/config/env.js";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { readData, writeData } from "../src/utils/jsonDatabase.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const directory = path.dirname(fileURLToPath(import.meta.url));
 
 async function seedProducts() {
   try {
-    // Load environment
-    dotenv.config();
-    loadEnv();
+    const fixturePath = path.resolve(directory, "../data/vandrichh_products.json");
+    const fixture = JSON.parse(await fs.readFile(fixturePath, "utf8"));
+    if (!Array.isArray(fixture)) throw new Error("Products data must be an array");
 
-    // Connect to MongoDB
-    const mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri) {
-      throw new Error("MONGODB_URI environment variable not set");
-    }
+    const products = await readData<Record<string, any>>("products");
+    const now = new Date().toISOString();
+    let inserted = 0;
+    let updated = 0;
+    const usedIds = new Set<string>();
+    let nextId = products.reduce((highest, product) => {
+      const match = String(product._id || "").match(/^prod_(\d+)$/);
+      return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
 
-    console.log("🔗 Connecting to MongoDB...");
-    await mongoose.connect(mongoUri);
-    console.log("✅ Connected to MongoDB");
+    for (const source of fixture) {
+      const sku = String(source.sku).toUpperCase();
+      const index = products.findIndex((product) => product.sku === sku);
+      const current = index >= 0 ? products[index] : undefined;
+      let id = current?._id;
+      if (!id || usedIds.has(id)) id = `prod_${String(++nextId).padStart(3, "0")}`;
+      usedIds.add(id);
+      const product = {
+        _id: id,
+        ...source,
+        sku,
+        subcategory: source.subcategory || "",
+        material: source.material || "",
+        availableSizes: source.availableSizes || [],
+        colours: source.colours || [],
+        images: source.images || [],
+        isActive: source.isActive ?? true,
+        isFeatured: source.isFeatured ?? false,
+        isTrending: source.isTrending ?? false,
+        isNew: source.isNew ?? false,
+        createdAt: current?.createdAt || now,
+        updatedAt: now,
+      };
 
-    // Read products JSON
-    const dataPath = path.join(__dirname, "vandrichh_products.json");
-    console.log(`📂 Reading products from ${dataPath}`);
-
-    const fileContent = await fs.readFile(dataPath, "utf-8");
-    const products = JSON.parse(fileContent);
-
-    if (!Array.isArray(products)) {
-      throw new Error("Products data must be an array");
-    }
-
-    console.log(`📦 Found ${products.length} products to import`);
-
-    let insertedCount = 0;
-    let updatedCount = 0;
-    let failedCount = 0;
-
-    // Process each product
-    for (const productData of products) {
-      try {
-        const result = await Product.updateOne(
-          { sku: productData.sku.toUpperCase() },
-          {
-            ...productData,
-            sku: productData.sku.toUpperCase(),
-          },
-          { upsert: true }
-        );
-
-        if (result.upsertedId) {
-          insertedCount++;
-          console.log(`✅ Inserted: ${productData.productName} (SKU: ${productData.sku})`);
-        } else if (result.modifiedCount > 0) {
-          updatedCount++;
-          console.log(`🔄 Updated: ${productData.productName} (SKU: ${productData.sku})`);
-        }
-      } catch (error) {
-        failedCount++;
-        console.error(`❌ Failed: ${productData.productName}`, error);
+      if (index >= 0) {
+        products[index] = product;
+        updated++;
+      } else {
+        products.push(product);
+        inserted++;
       }
     }
 
-    console.log("\n📊 Seeding Summary:");
-    console.log(`✅ Inserted: ${insertedCount}`);
-    console.log(`🔄 Updated: ${updatedCount}`);
-    console.log(`❌ Failed: ${failedCount}`);
-    console.log(`📈 Total: ${insertedCount + updatedCount + failedCount}`);
-
-    // Verify
-    const total = await Product.countDocuments();
-    console.log(`\n🔍 Total products in database: ${total}`);
-
-    await mongoose.disconnect();
-    console.log("✅ Database disconnected");
-    console.log("✅ Seeding completed successfully!");
-    process.exit(0);
+    await writeData("products", products);
+    console.log(`Seeded local products: ${inserted} inserted, ${updated} updated, ${products.length} total`);
   } catch (error) {
-    console.error("❌ Seeding failed:", error);
-    process.exit(1);
+    console.error("Product seeding failed:", error);
+    process.exitCode = 1;
   }
 }
 
-seedProducts();
+await seedProducts();

@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
 import { Product } from "../models/product.model.js";
 import { Category } from "../models/category.model.js";
 
@@ -25,7 +24,7 @@ const parseBooleanQuery = (
 // Resolve Category
 //
 // Accepts:
-// - MongoDB _id
+// - local string ID
 // - category name
 // - category slug
 //
@@ -45,27 +44,12 @@ const resolveCategoryValues = async (
   }
 
   // -----------------------------------------------------
-  // If Android sent MongoDB ObjectId
-  // -----------------------------------------------------
+  const categoryById = await Category.findById(normalizedValue)
+    .select("_id name slug")
+    .lean();
 
-  if (mongoose.isValidObjectId(normalizedValue)) {
-    categoryValues.push(normalizedValue);
-    categoryValues.push(
-      new mongoose.Types.ObjectId(normalizedValue)
-    );
-
-    const category = await Category.findById(
-      normalizedValue
-    )
-      .select("_id name slug")
-      .lean();
-
-    if (category) {
-      categoryValues.push(category.name);
-      categoryValues.push(category.slug);
-      categoryValues.push(String(category._id));
-    }
-
+  if (categoryById) {
+    categoryValues.push(categoryById._id, categoryById.name, categoryById.slug);
     return uniqueValues(categoryValues);
   }
 
@@ -109,7 +93,7 @@ const resolveCategoryValues = async (
 // NO HARDCODED MAPPING.
 //
 // It searches the selected Category's subcategories
-// dynamically from MongoDB.
+// dynamically from the selected category record.
 //
 // Accepts:
 // - subcategory id
@@ -138,16 +122,15 @@ const resolveSubcategoryValues = async (
 
   let category = null;
 
-  if (
-    categoryValue &&
-    mongoose.isValidObjectId(categoryValue)
-  ) {
+  if (categoryValue) {
     category = await Category.findById(
       categoryValue
     )
       .select("subcategories")
       .lean();
-  } else if (categoryValue) {
+  }
+
+  if (!category && categoryValue) {
     const categoryRegex = new RegExp(
       `^${escapeRegex(categoryValue.trim())}$`,
       "i"
@@ -620,11 +603,7 @@ export const getById = async (
     const { id } =
       req.params;
 
-    if (
-      !mongoose.isValidObjectId(
-        id
-      )
-    ) {
+    if (!id) {
       return res.status(400).json({
         success: false,
         message:
@@ -930,11 +909,7 @@ export const update = async (
     const { id } =
       req.params;
 
-    if (
-      !mongoose.isValidObjectId(
-        id
-      )
-    ) {
+    if (!id) {
       return res.status(400).json({
         success: false,
         message:
@@ -1005,11 +980,7 @@ export const deactivate = async (
     const { id } =
       req.params;
 
-    if (
-      !mongoose.isValidObjectId(
-        id
-      )
-    ) {
+    if (!id) {
       return res.status(400).json({
         success: false,
         message:
@@ -1070,11 +1041,7 @@ export const remove = async (
     const { id } =
       req.params;
 
-    if (
-      !mongoose.isValidObjectId(
-        id
-      )
-    ) {
+    if (!id) {
       return res.status(400).json({
         success: false,
         message:

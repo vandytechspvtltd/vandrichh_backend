@@ -150,8 +150,8 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: Order MongoDB ObjectId
- *         example: "65f123456789abcdef123456"
+ *         description: Order local string ID
+ *         example: "order_001"
  *     responses:
  *       200:
  *         description: Order fetched successfully
@@ -189,8 +189,8 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: Order MongoDB ObjectId
- *         example: "65f123456789abcdef123456"
+ *         description: Order local string ID
+ *         example: "order_001"
  *     requestBody:
  *       required: true
  *       content:

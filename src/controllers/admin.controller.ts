@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
 
 import { Product } from "../models/product.model.js";
 import { Category } from "../models/category.model.js";
@@ -10,7 +9,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { resolveImageUrl, resolveImageUrls } from "../services/image-storage.service.js";
 
 const idOrThrow = (id: string, resource: string) => {
-  if (!mongoose.isValidObjectId(id)) {
+  if (!id) {
     throw new ApiError(400, `Invalid ${resource} ID`);
   }
 };

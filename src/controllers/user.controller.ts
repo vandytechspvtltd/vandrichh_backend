@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { randomUUID } from "node:crypto";
 import { User } from "../models/user.model.js";
 
 interface AuthRequest extends Request {
@@ -371,6 +372,7 @@ export const addAddress = async (
     // -------------------------------------------------
 
     user.addresses.push({
+      _id: `addr_${randomUUID()}`,
       name: String(fullName).trim(),
       phone: String(phone).trim(),
       addressLine1: String(street).trim(),

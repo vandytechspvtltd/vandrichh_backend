@@ -1,11 +1,8 @@
 import dotenv from "dotenv";
-import dns from "dns";
 
 // Load .env before importing modules that depend on environment variables
 dotenv.config();
-dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import { loadEnv, getEnv } from "./config/env.js";
-import { connectDatabase } from "./config/database.js";
 
 async function startServer() {
   try {
@@ -18,10 +15,6 @@ async function startServer() {
 
     console.log("🚀 Starting Vandrichh API server...");
     console.log(`📝 Environment: ${env.NODE_ENV}`);
-
-    // Connect to MongoDB
-    console.log("🔗 Connecting to MongoDB...");
-    await connectDatabase();
 
     // Start HTTP server
     const server = app.listen(env.PORT, () => {

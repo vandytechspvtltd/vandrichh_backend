@@ -1,40 +1,7 @@
-import mongoose, {
-  Schema,
-  Document,
-  Types,
-} from "mongoose";
+import { createJsonModel, registerJsonModel } from "../utils/jsonModel.js";
 
-export interface IWishlist extends Document {
-  _id: Types.ObjectId;
-  user: Types.ObjectId;
-  products: Types.ObjectId[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+export interface IWishlist extends Record<string, any> {}
 
-const wishlistSchema = new Schema<IWishlist>(
-  {
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      unique: true,
-      index: true,
-    },
+export const Wishlist = createJsonModel("wishlists", "wish", { products: [] }, { uniqueFields: ["user"] });
 
-    products: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Product",
-      },
-    ],
-  },
-  {
-    timestamps: true,
-  }
-);
-
-export const Wishlist = mongoose.model<IWishlist>(
-  "Wishlist",
-  wishlistSchema
-);
+registerJsonModel("Wishlist", Wishlist);

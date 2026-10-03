@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 export interface ApiRequest extends Request {
   userId?: string;
   userRole?: "CUSTOMER" | "ADMIN";
+  user?: { id?: string; _id?: string };
   adminId?: string;
   adminRole?: "ADMIN" | "SUPER_ADMIN";
 }

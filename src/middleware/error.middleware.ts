@@ -20,7 +20,7 @@ export function errorMiddleware(
     return res.status(err.statusCode).json(err.toJSON());
   }
 
-  // Mongoose validation error
+  // Validation error
   if (err.name === "ValidationError") {
     const errors = Object.values(err.errors).map((e: any) => e.message);
     return res.status(400).json({
@@ -30,7 +30,7 @@ export function errorMiddleware(
     });
   }
 
-  // Mongoose duplicate key error
+  // Duplicate unique field
   if (err.code === 11000) {
     const field = Object.keys(err.keyPattern)[0];
     return res.status(409).json({
@@ -40,7 +40,7 @@ export function errorMiddleware(
     });
   }
 
-  // Mongoose cast error (invalid ObjectId)
+  // Invalid identifier format
   if (err.name === "CastError") {
     return res.status(400).json({
       success: false,

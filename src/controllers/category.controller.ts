@@ -4,7 +4,7 @@ import { Category } from "../models/category.model.js";
 /**
  * GET ALL ACTIVE CATEGORIES
  *
- * MongoDB se categories fetch hoti hain.
+ * Categories are loaded from the local JSON collection.
  * Koi category name hardcode nahi hai.
  */
 export const getAll = async (
