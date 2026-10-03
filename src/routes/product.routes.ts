@@ -3,8 +3,7 @@ import { Router } from "express";
 import * as productController from "../controllers/product.controller.js";
 
 import {
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
 } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -377,8 +376,7 @@ router.get(
  */
 router.post(
   "/",
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
   productController.create
 );
 
@@ -485,8 +483,7 @@ router.post(
  */
 router.put(
   "/:id",
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
   productController.update
 );
 
@@ -527,8 +524,7 @@ router.put(
  */
 router.delete(
   "/:id/deactivate",
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
   productController.deactivate
 );
 
@@ -569,8 +565,7 @@ router.delete(
  */
 router.delete(
   "/:id",
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
   productController.remove
 );
 

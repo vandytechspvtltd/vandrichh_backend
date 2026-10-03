@@ -3,8 +3,7 @@ import { Router } from "express";
 import * as categoryController from "../controllers/category.controller.js";
 
 import {
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
 } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -127,8 +126,7 @@ router.get(
  */
 router.post(
   "/",
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
   categoryController.create
 );
 
@@ -195,8 +193,7 @@ router.post(
  */
 router.put(
   "/:id",
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
   categoryController.update
 );
 
@@ -238,8 +235,7 @@ router.put(
  */
 router.delete(
   "/:id",
-  authMiddleware,
-  adminMiddleware,
+  requireAdmin,
   categoryController.remove
 );
 

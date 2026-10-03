@@ -481,5 +481,35 @@
     "isNew": false,
     "createdAt": "2026-10-03T10:04:18.987Z",
     "updatedAt": "2026-10-03T10:06:35.298Z"
+  },
+  {
+    "subcategory": "",
+    "material": "Cotton",
+    "availableSizes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "colours": [
+      "White"
+    ],
+    "wholesalePrice": 200,
+    "mrp": 499,
+    "sellingPrice": 399,
+    "description": "Created from API test",
+    "images": [
+      "https://example.com/test.jpg"
+    ],
+    "stock": 12,
+    "isActive": true,
+    "isFeatured": false,
+    "isTrending": false,
+    "isNew": false,
+    "sku": "TEST-FLOW-1791030346349",
+    "category": "Shirts",
+    "productName": "API Test Product",
+    "_id": "prod_016",
+    "createdAt": "2026-10-03T12:25:47.372Z",
+    "updatedAt": "2026-10-03T12:25:47.372Z"
   }
 ]

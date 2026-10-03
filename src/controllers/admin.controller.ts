@@ -22,6 +22,64 @@ const pageOptions = (req: Request) => ({
 const pick = (source: Record<string, any>, fields: string[]) =>
   Object.fromEntries(fields.filter((field) => source[field] !== undefined).map((field) => [field, source[field]]));
 
+const serializeProduct = (product: any) => {
+  const record = product && typeof product.toObject === "function" ? product.toObject() : { ...(product ?? {}) };
+  if (!record || typeof record !== "object") return record;
+  const productId = record.id ?? record._id;
+  if (productId !== undefined && record.id === undefined) {
+    record.id = productId;
+  }
+  return record;
+};
+
+const normalizeProductPayload = (source: Record<string, any>) => {
+  const data = pick(source, [
+    "sku", "category", "subcategory", "productName", "material", "availableSizes",
+    "colours", "wholesalePrice", "mrp", "sellingPrice", "description", "images",
+    "stock", "isActive", "isFeatured", "isTrending", "isNew",
+  ]);
+
+  if (data.sku !== undefined) data.sku = String(data.sku).trim();
+  if (data.category !== undefined) data.category = String(data.category).trim();
+  if (data.subcategory !== undefined) data.subcategory = String(data.subcategory).trim();
+  if (data.productName !== undefined) data.productName = String(data.productName).trim();
+  if (data.material !== undefined) data.material = String(data.material).trim();
+  if (data.description !== undefined) data.description = String(data.description).trim();
+
+  if (data.availableSizes !== undefined) {
+    data.availableSizes = Array.isArray(data.availableSizes) ? data.availableSizes.map((value: any) => String(value).trim()).filter(Boolean) : [];
+  }
+  if (data.colours !== undefined) {
+    data.colours = Array.isArray(data.colours) ? data.colours.map((value: any) => String(value).trim()).filter(Boolean) : [];
+  }
+  if (data.images !== undefined) {
+    data.images = Array.isArray(data.images) ? data.images.map((value: any) => String(value).trim()).filter(Boolean) : [];
+    data.images = resolveImageUrls(data.images);
+  }
+
+  if (data.wholesalePrice !== undefined) data.wholesalePrice = Number(data.wholesalePrice);
+  if (data.mrp !== undefined) data.mrp = Number(data.mrp);
+  if (data.sellingPrice !== undefined) data.sellingPrice = Number(data.sellingPrice);
+  if (data.stock !== undefined) data.stock = Number(data.stock);
+
+  if (data.isActive !== undefined) data.isActive = Boolean(data.isActive);
+  if (data.isFeatured !== undefined) data.isFeatured = Boolean(data.isFeatured);
+  if (data.isTrending !== undefined) data.isTrending = Boolean(data.isTrending);
+  if (data.isNew !== undefined) data.isNew = Boolean(data.isNew);
+
+  if (data.productName !== undefined && !data.productName) throw new ApiError(400, "productName cannot be empty");
+  if (data.category !== undefined && !data.category) throw new ApiError(400, "category cannot be empty");
+  if (data.sku !== undefined && !data.sku) throw new ApiError(400, "sku cannot be empty");
+  if (data.mrp !== undefined && data.mrp < 0) throw new ApiError(400, "mrp cannot be negative");
+  if (data.sellingPrice !== undefined && data.sellingPrice < 0) throw new ApiError(400, "sellingPrice cannot be negative");
+  if (data.stock !== undefined && data.stock < 0) throw new ApiError(400, "stock cannot be negative");
+  if (data.mrp !== undefined && data.sellingPrice !== undefined && data.sellingPrice > data.mrp) {
+    throw new ApiError(400, "sellingPrice cannot be greater than mrp");
+  }
+
+  return data;
+};
+
 const productFields = [
   "sku", "category", "subcategory", "productName", "material", "availableSizes",
   "colours", "wholesalePrice", "mrp", "sellingPrice", "description", "images",
@@ -69,37 +127,55 @@ export const listProducts = async (req: Request, res: Response) => {
     Product.find().sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Product.countDocuments(),
   ]);
-  return res.json({ success: true, message: "Admin products fetched successfully", data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  return res.json({ success: true, message: "Admin products fetched successfully", data: data.map(serializeProduct), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
 };
 
 export const getProduct = async (req: Request, res: Response) => {
   idOrThrow(req.params.id, "product");
   const product = await Product.findById(req.params.id).lean();
   if (!product) throw new ApiError(404, "Product not found");
-  return res.json({ success: true, message: "Product fetched successfully", data: product });
+  return res.json({ success: true, message: "Product fetched successfully", data: serializeProduct(product) });
 };
 
 export const createProduct = async (req: Request, res: Response) => {
-  const data = pick(req.body, productFields);
-  if (data.images !== undefined) data.images = resolveImageUrls(data.images);
+  const data = normalizeProductPayload(req.body);
+  if (!data.sku) throw new ApiError(400, "sku is required");
+  if (!data.category) throw new ApiError(400, "category is required");
+  if (!data.productName) throw new ApiError(400, "productName is required");
+
+  const duplicate = await Product.findOne({ sku: data.sku }).lean();
+  if (duplicate) throw new ApiError(409, "SKU already exists");
+
+  if (data.isActive === undefined) data.isActive = true;
+  if (data.isFeatured === undefined) data.isFeatured = false;
+  if (data.isTrending === undefined) data.isTrending = false;
+  if (data.isNew === undefined) data.isNew = false;
+
   const product = await Product.create(data);
-  return res.status(201).json({ success: true, message: "Product created successfully", data: product });
+  return res.status(201).json({ success: true, message: "Product created successfully", data: serializeProduct(product) });
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
   idOrThrow(req.params.id, "product");
-  const data = pick(req.body, productFields);
-  if (data.images !== undefined) data.images = resolveImageUrls(data.images);
-  const product = await Product.findByIdAndUpdate(req.params.id, { $set: data }, { new: true, runValidators: true }).lean();
-  if (!product) throw new ApiError(404, "Product not found");
-  return res.json({ success: true, message: "Product updated successfully", data: product });
+  const existing = await Product.findById(req.params.id).lean();
+  if (!existing) throw new ApiError(404, "Product not found");
+
+  const data = normalizeProductPayload(req.body);
+  if (data.sku && data.sku !== existing.sku) {
+    const duplicate = await Product.findOne({ sku: data.sku, _id: { $ne: req.params.id } }).lean();
+    if (duplicate) throw new ApiError(409, "SKU already exists");
+  }
+
+  const updated = await Product.findByIdAndUpdate(req.params.id, { $set: data });
+  if (!updated) throw new ApiError(404, "Product not found");
+  return res.json({ success: true, message: "Product updated successfully", data: serializeProduct(updated) });
 };
 
 export const deleteProduct = async (req: Request, res: Response) => {
   idOrThrow(req.params.id, "product");
-  const product = await Product.findByIdAndDelete(req.params.id).lean();
+  const product = await Product.findByIdAndDelete(req.params.id);
   if (!product) throw new ApiError(404, "Product not found");
-  return res.json({ success: true, message: "Product deleted successfully", data: product });
+  return res.json({ success: true, message: "Product deleted successfully", data: serializeProduct(product) });
 };
 
 export const deactivateProduct = async (req: Request, res: Response) => {

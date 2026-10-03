@@ -226,6 +226,16 @@ const uniqueStrings = (
   ];
 };
 
+const serializeProduct = (product: any) => {
+  const record = product && typeof product.toObject === "function" ? product.toObject() : { ...(product ?? {}) };
+  if (!record || typeof record !== "object") return record;
+  const productId = record.id ?? record._id;
+  if (productId !== undefined && record.id === undefined) {
+    record.id = productId;
+  }
+  return record;
+};
+
 // =====================================================
 // Get All Products
 // =====================================================
@@ -543,7 +553,7 @@ export const getAll = async (
         "Products fetched successfully",
 
       data: {
-        products,
+        products: products.map(serializeProduct),
 
         pagination: {
           page,
@@ -670,7 +680,7 @@ export const getBySku = async (
 
     const product =
       await Product.findOne({
-        sku,
+        sku: new RegExp(`^${sku.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
         isActive: true,
       }).lean();
 
@@ -736,7 +746,7 @@ export const getFeatured = async (
       success: true,
       message:
         "Featured products fetched successfully",
-      data: products,
+      data: products.map(serializeProduct),
     });
   } catch (error) {
     console.error(
@@ -786,7 +796,7 @@ export const getTrending = async (
       success: true,
       message:
         "Trending products fetched successfully",
-      data: products,
+      data: products.map(serializeProduct),
     });
   } catch (error) {
     console.error(
@@ -836,7 +846,7 @@ export const getNewArrivals = async (
       success: true,
       message:
         "New arrivals fetched successfully",
-      data: products,
+      data: products.map(serializeProduct),
     });
   } catch (error) {
     console.error(

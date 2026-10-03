@@ -91,6 +91,18 @@ const options = {
         name: "Admin Banners",
         description: "Administrator banner management",
       },
+      {
+        name: "Admin Inventory",
+        description: "Administrator inventory management",
+      },
+      {
+        name: "Admin Coupons",
+        description: "Administrator coupon management",
+      },
+      {
+        name: "Reviews",
+        description: "Customer product reviews",
+      },
     ],
 
     components: {
@@ -140,8 +152,207 @@ const options = {
             updatedAt: { type: "string", format: "date-time" },
           },
         },
+        Inventory: {
+          type: "object",
+          properties: {
+            _id: { type: "string", example: "inv_001" },
+            productId: { type: "string", example: "prod_001" },
+            sku: { type: "string", example: "SHR-WHT-001" },
+            stock: { type: "integer", minimum: 0, example: 25 },
+            reserved: { type: "integer", minimum: 0, example: 2 },
+            available: { type: "integer", minimum: 0, example: 23 },
+            location: { type: "string", example: "warehouse" },
+            status: { type: "string", enum: ["IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK"] },
+            updatedAt: { type: "string", format: "date-time" },
+          },
+        },
+        InventoryInput: {
+          type: "object",
+          required: ["productId", "sku"],
+          properties: {
+            productId: { type: "string", example: "prod_001" },
+            sku: { type: "string", example: "SHR-WHT-001" },
+            stock: { type: "integer", minimum: 0, default: 0 },
+            reserved: { type: "integer", minimum: 0, default: 0 },
+            location: { type: "string", default: "warehouse" },
+            status: { type: "string", enum: ["IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK"], default: "IN_STOCK" },
+          },
+        },
+        InventoryUpdateInput: {
+          type: "object",
+          properties: {
+            productId: { type: "string" },
+            sku: { type: "string" },
+            stock: { type: "integer", minimum: 0 },
+            reserved: { type: "integer", minimum: 0 },
+            location: { type: "string" },
+            status: { type: "string", enum: ["IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK"] },
+          },
+        },
+        Coupon: {
+          type: "object",
+          properties: {
+            _id: { type: "string", example: "coup_001" },
+            code: { type: "string", example: "SAVE10" },
+            description: { type: "string" },
+            type: { type: "string", enum: ["PERCENTAGE", "FIXED"] },
+            value: { type: "number", minimum: 0 },
+            minOrderValue: { type: "number", minimum: 0 },
+            maxDiscount: { type: "number", minimum: 0 },
+            isActive: { type: "boolean" },
+            usageLimit: { type: "integer", minimum: 0 },
+            usedCount: { type: "integer", minimum: 0 },
+            expiresAt: { type: "string", format: "date-time", nullable: true },
+          },
+        },
+        CouponInput: {
+          type: "object",
+          required: ["code", "description"],
+          properties: {
+            code: { type: "string", minLength: 3, example: "SAVE10" },
+            description: { type: "string", minLength: 1 },
+            type: { type: "string", enum: ["PERCENTAGE", "FIXED"], default: "PERCENTAGE" },
+            value: { type: "number", minimum: 0, default: 0 },
+            minOrderValue: { type: "number", minimum: 0, default: 0 },
+            maxDiscount: { type: "number", minimum: 0, default: 0 },
+            isActive: { type: "boolean", default: true },
+            usageLimit: { type: "integer", minimum: 0, default: 0 },
+            expiresAt: { type: "string", format: "date-time", nullable: true },
+          },
+        },
+        CouponUpdateInput: {
+          type: "object",
+          properties: {
+            code: { type: "string", minLength: 3 },
+            description: { type: "string", minLength: 1 },
+            type: { type: "string", enum: ["PERCENTAGE", "FIXED"] },
+            value: { type: "number", minimum: 0 },
+            minOrderValue: { type: "number", minimum: 0 },
+            maxDiscount: { type: "number", minimum: 0 },
+            isActive: { type: "boolean" },
+            usageLimit: { type: "integer", minimum: 0 },
+            expiresAt: { type: "string", format: "date-time", nullable: true },
+          },
+        },
+        Review: {
+          type: "object",
+          properties: {
+            _id: { type: "string", example: "rev_001" },
+            userId: { type: "string", example: "user_001" },
+            productId: { type: "string", example: "prod_001" },
+            rating: { type: "integer", minimum: 1, maximum: 5, example: 5 },
+            title: { type: "string" },
+            comment: { type: "string" },
+            isApproved: { type: "boolean" },
+            createdAt: { type: "string", format: "date-time" },
+          },
+        },
+        ReviewInput: {
+          type: "object",
+          required: ["productId", "comment"],
+          properties: {
+            productId: { type: "string", example: "prod_001" },
+            rating: { type: "integer", minimum: 1, maximum: 5, default: 5 },
+            title: { type: "string" },
+            comment: { type: "string", minLength: 1 },
+          },
+        },
+        ReviewUpdateInput: {
+          type: "object",
+          properties: {
+            productId: { type: "string" },
+            rating: { type: "integer", minimum: 1, maximum: 5 },
+            title: { type: "string" },
+            comment: { type: "string", minLength: 1 },
+            isApproved: { type: "boolean" },
+          },
+        },
         AdminProductInput: {
-          allOf: [{ $ref: "#/components/schemas/Product" }],
+          type: "object",
+          required: ["sku", "category", "productName", "mrp", "sellingPrice", "stock"],
+          properties: {
+            sku: { type: "string", example: "TEST-API-001" },
+            category: { type: "string", example: "Shirts" },
+            subcategory: { type: "string", example: "Casual Shirts" },
+            productName: { type: "string", example: "Classic White Cotton Shirt" },
+            material: { type: "string", example: "100% Cotton" },
+            availableSizes: { type: "array", items: { type: "string" }, example: ["S", "M", "L", "XL"] },
+            colours: { type: "array", items: { type: "string" }, example: ["White", "Blue"] },
+            wholesalePrice: { type: "number", example: 180 },
+            mrp: { type: "number", example: 499 },
+            sellingPrice: { type: "number", example: 399 },
+            description: { type: "string", example: "Premium cotton shirt with a relaxed fit." },
+            images: { type: "array", items: { type: "string", format: "uri" }, example: ["https://example.com/image1.jpg", "https://example.com/image2.jpg"] },
+            stock: { type: "integer", minimum: 0, example: 25 },
+            isActive: { type: "boolean", example: true },
+            isFeatured: { type: "boolean", example: false },
+            isTrending: { type: "boolean", example: false },
+            isNew: { type: "boolean", example: true },
+          },
+        },
+        ProductCreateInput: {
+          $ref: "#/components/schemas/AdminProductInput",
+        },
+        ProductUpdateInput: {
+          type: "object",
+          properties: {
+            sku: { type: "string", example: "TEST-API-001" },
+            category: { type: "string", example: "Shirts" },
+            productName: { type: "string", example: "Updated White Cotton Shirt" },
+            mrp: { type: "number", example: 499 },
+            sellingPrice: { type: "number", example: 449 },
+            stock: { type: "integer", minimum: 0, example: 18 },
+            isActive: { type: "boolean", example: true },
+            images: { type: "array", items: { type: "string", format: "uri" } },
+          },
+          description: "Partial update schema for admin product edits. Any provided field is merged into the persisted product record.",
+        },
+        ProductListResponse: {
+          type: "object",
+          properties: {
+            success: { type: "boolean", example: true },
+            message: { type: "string", example: "Admin products fetched successfully" },
+            data: { type: "array", items: { $ref: "#/components/schemas/Product" } },
+            pagination: {
+              type: "object",
+              properties: {
+                page: { type: "integer", example: 1 },
+                limit: { type: "integer", example: 20 },
+                total: { type: "integer", example: 42 },
+                totalPages: { type: "integer", example: 3 },
+              },
+            },
+          },
+        },
+        ProductSuccessResponse: {
+          type: "object",
+          properties: {
+            success: { type: "boolean", example: true },
+            message: { type: "string", example: "Product created successfully" },
+            data: { $ref: "#/components/schemas/Product" },
+          },
+        },
+        ValidationErrorResponse: {
+          type: "object",
+          properties: {
+            success: { type: "boolean", example: false },
+            message: { type: "string", example: "productName cannot be empty" },
+            data: { type: "object", nullable: true },
+          },
+        },
+        DuplicateSkuResponse: {
+          type: "object",
+          properties: {
+            success: { type: "boolean", example: false },
+            message: { type: "string", example: "SKU already exists" },
+          },
+        },
+        NotFoundResponse: {
+          type: "object",
+          properties: {
+            success: { type: "boolean", example: false },
+            message: { type: "string", example: "Product not found" },
+          },
         },
         AdminCategoryInput: {
           allOf: [{ $ref: "#/components/schemas/Category" }],
@@ -791,7 +1002,7 @@ const options = {
     },
   },
 
-  apis: ["./src/routes/*.ts"],
+  apis: ["./src/routes/*.ts", "./src/modules/**/*.routes.ts"],
 };
 
 export const swaggerSpec =

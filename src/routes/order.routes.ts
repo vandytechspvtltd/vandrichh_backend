@@ -4,12 +4,10 @@ import * as orderController from "../controllers/order.controller.js";
 
 import {
   authMiddleware,
-  adminMiddleware,
+  requireAdmin,
 } from "../middleware/auth.middleware.js";
 
 const router = Router();
-
-router.use(authMiddleware);
 
 // =====================================================
 // Create Order / Checkout
@@ -55,6 +53,7 @@ router.use(authMiddleware);
  */
 router.post(
   "/checkout",
+  authMiddleware,
   orderController.create
 );
 
@@ -97,6 +96,7 @@ router.post(
  */
 router.get(
   "/",
+  authMiddleware,
   orderController.getMyOrders
 );
 
@@ -126,7 +126,7 @@ router.get(
  */
 router.get(
   "/admin/orders",
-  adminMiddleware,
+  requireAdmin,
   orderController.getAllOrders
 );
 
@@ -166,6 +166,7 @@ router.get(
  */
 router.get(
   "/:id",
+  authMiddleware,
   orderController.getOrderById
 );
 
@@ -234,7 +235,7 @@ router.get(
  */
 router.put(
   "/:id/status",
-  adminMiddleware,
+  requireAdmin,
   orderController.updateStatus
 );
 

@@ -82,13 +82,17 @@ router.get("/dashboard", asyncHandler(controller.dashboard));
  *     requestBody:
  *       required: true
  *       content:
- *         application/json: { schema: { $ref: '#/components/schemas/AdminProductInput' } }
+ *         application/json: { schema: { $ref: '#/components/schemas/ProductCreateInput' } }
  *     responses:
- *       201: { description: Product created }
- *       400: { description: Missing or invalid product fields }
+ *       201:
+ *         description: Product created successfully
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ProductSuccessResponse' }
+ *       400: { description: Validation error, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationErrorResponse' } } } }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
- *       409: { description: Duplicate SKU }
+ *       409: { description: Duplicate SKU, content: { application/json: { schema: { $ref: '#/components/schemas/DuplicateSkuResponse' } } } }
  */
 router.get("/products", asyncHandler(controller.listProducts));
 router.post("/products", asyncHandler(controller.createProduct));
@@ -115,14 +119,38 @@ router.post("/products", asyncHandler(controller.createProduct));
  *     requestBody:
  *       required: true
  *       content:
- *         application/json: { schema: { $ref: '#/components/schemas/AdminProductInput' } }
+ *         application/json: { schema: { $ref: '#/components/schemas/ProductUpdateInput' } }
  *     responses:
- *       200: { description: Product updated }
- *       400: { description: Invalid ID or fields }
+ *       200:
+ *         description: Product updated successfully
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ProductSuccessResponse' }
+ *       400: { description: Invalid ID or fields, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationErrorResponse' } } } }
  *       401: { description: Missing or invalid admin JWT }
  *       403: { description: Admin access required }
- *       404: { description: Product not found }
- *       409: { description: Duplicate SKU }
+ *       404: { description: Product not found, content: { application/json: { schema: { $ref: '#/components/schemas/NotFoundResponse' } } } }
+ *       409: { description: Duplicate SKU, content: { application/json: { schema: { $ref: '#/components/schemas/DuplicateSkuResponse' } } } }
+ *   patch:
+ *     summary: Partially update a product
+ *     tags: [Admin Products]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json: { schema: { $ref: '#/components/schemas/ProductUpdateInput' } }
+ *     responses:
+ *       200:
+ *         description: Product updated successfully
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ProductSuccessResponse' }
+ *       400: { description: Invalid ID or fields, content: { application/json: { schema: { $ref: '#/components/schemas/ValidationErrorResponse' } } } }
+ *       401: { description: Missing or invalid admin JWT }
+ *       403: { description: Admin access required }
+ *       404: { description: Product not found, content: { application/json: { schema: { $ref: '#/components/schemas/NotFoundResponse' } } } }
+ *       409: { description: Duplicate SKU, content: { application/json: { schema: { $ref: '#/components/schemas/DuplicateSkuResponse' } } } }
  *   delete:
  *     summary: Permanently delete a product
  *     tags: [Admin Products]
@@ -137,6 +165,7 @@ router.post("/products", asyncHandler(controller.createProduct));
  */
 router.get("/products/:id", asyncHandler(controller.getProduct));
 router.put("/products/:id", asyncHandler(controller.updateProduct));
+router.patch("/products/:id", asyncHandler(controller.updateProduct));
 router.delete("/products/:id", asyncHandler(controller.deleteProduct));
 
 /**

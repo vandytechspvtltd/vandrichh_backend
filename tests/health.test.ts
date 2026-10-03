@@ -1,12 +1,22 @@
-import request from "supertest";
-import app from "../src/app.js";
+import test from "node:test";
+import assert from "node:assert/strict";
+import { loadEnv } from "../src/config/env.js";
 
-describe("Health Endpoint", () => {
-  it("should return 200 and success message", async () => {
-    const response = await request(app).get("/api/v1/health");
+loadEnv();
 
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(response.body.message).toContain("running");
-  });
+const { default: app } = await import("../src/app.js");
+
+test("health endpoint returns success", async () => {
+  const port = 5100 + Math.floor(Math.random() * 1000);
+  const server = app.listen(port);
+
+  try {
+    const response = await fetch(`http://localhost:${port}/api/v1/health`);
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.success, true);
+    assert.match(payload.message, /running/i);
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
+  }
 });

@@ -1,1 +1,72 @@
-[]
+[
+  {
+    "role": "ADMIN",
+    "isActive": true,
+    "name": "Product Test Admin",
+    "email": "product-test-1791030346362@example.com",
+    "passwordHash": "$2a$12$IQVO3RZPsYggV97ubomSBe8trUdX4l61rJSgA7vBVQiaeihh19./a",
+    "_id": "admin_001",
+    "createdAt": "2026-10-03T12:25:46.803Z",
+    "updatedAt": "2026-10-03T12:25:46.803Z"
+  },
+  {
+    "role": "ADMIN",
+    "isActive": true,
+    "name": "Product Test Admin",
+    "email": "product-test-1791031418403@example.com",
+    "passwordHash": "$2a$12$feudNg0pFXx0vRQteoUaze3hspxWkPQmvrMoMKwcyjxGt1m0Nu/JS",
+    "_id": "admin_002",
+    "createdAt": "2026-10-03T12:43:38.747Z",
+    "updatedAt": "2026-10-03T12:43:38.747Z"
+  },
+  {
+    "role": "ADMIN",
+    "isActive": true,
+    "name": "Product Test Admin",
+    "email": "product-test-1791031455053@example.com",
+    "passwordHash": "$2a$12$woi6Fe5NBahygX5C6f6FNONaxMwW2yYDlkSKPF9GTM8ZwBGoXH6sS",
+    "_id": "admin_003",
+    "createdAt": "2026-10-03T12:44:15.391Z",
+    "updatedAt": "2026-10-03T12:44:15.391Z"
+  },
+  {
+    "role": "ADMIN",
+    "isActive": true,
+    "name": "API Tester",
+    "email": "api.test.1791031781036@example.com",
+    "passwordHash": "$2a$12$R6PCePnpDjQ9SKlYNc087ePhAgvBjRz.OQIigwtixYREnmhxt/C/y",
+    "_id": "admin_004",
+    "createdAt": "2026-10-03T12:49:41.408Z",
+    "updatedAt": "2026-10-03T12:49:41.408Z"
+  },
+  {
+    "role": "ADMIN",
+    "isActive": true,
+    "name": "API Auditor",
+    "email": "all-apis-1791033641309@example.com",
+    "passwordHash": "$2a$12$PO./szRvbU4AOGVxYnhnZenN5IrCnZ0xBJ5vWPQQB2taM4lDzaQzO",
+    "_id": "admin_005",
+    "createdAt": "2026-10-03T13:20:41.658Z",
+    "updatedAt": "2026-10-03T13:20:41.658Z"
+  },
+  {
+    "role": "ADMIN",
+    "isActive": true,
+    "name": "Product Test Admin",
+    "email": "product-test-1791034271510@example.com",
+    "passwordHash": "$2a$12$nIL5UftxuotAVE.dN.O3w.xkuIdmQHLfb22AtfA3zhnU7PDye6iva",
+    "_id": "admin_006",
+    "createdAt": "2026-10-03T13:31:12.082Z",
+    "updatedAt": "2026-10-03T13:31:12.082Z"
+  },
+  {
+    "role": "ADMIN",
+    "isActive": true,
+    "name": "Product Test Admin",
+    "email": "product-test-1791034942427@example.com",
+    "passwordHash": "$2a$12$.PUIX5rnpWaIaDP3OZ40cuM6O6hltKB72sglAuqgWLZZAYhoQsJMS",
+    "_id": "admin_007",
+    "createdAt": "2026-10-03T13:42:22.878Z",
+    "updatedAt": "2026-10-03T13:42:22.878Z"
+  }
+]
