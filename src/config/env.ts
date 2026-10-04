@@ -6,12 +6,17 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   ADMIN_JWT_SECRET: z.string().min(32).optional(),
+  ADMIN_EMAIL: z.string().email().optional(),
+  ADMIN_PASSWORD: z.string().min(1).optional(),
   JWT_EXPIRES_IN: z.string().default("7d"),
   ADMIN_JWT_EXPIRES_IN: z.string().default("8h"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   IMAGE_BASE_URL: z.string().url().optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
-});
+}).refine(
+  (environment) => Boolean(environment.ADMIN_EMAIL) === Boolean(environment.ADMIN_PASSWORD),
+  { message: "ADMIN_EMAIL and ADMIN_PASSWORD must be configured together", path: ["ADMIN_PASSWORD"] }
+);
 
 export type Env = z.infer<typeof envSchema>;
 

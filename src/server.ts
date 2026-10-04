@@ -10,6 +10,9 @@ async function startServer() {
     loadEnv();
     const env = getEnv();
 
+    const { ensureBootstrapAdmin } = await import("./services/admin-bootstrap.service.js");
+    await ensureBootstrapAdmin();
+
     // Import app only after environment has been loaded
     const { default: app } = await import("./app.js");
 

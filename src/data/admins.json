@@ -68,5 +68,25 @@
     "_id": "admin_007",
     "createdAt": "2026-10-03T13:42:22.878Z",
     "updatedAt": "2026-10-03T13:42:22.878Z"
+  },
+  {
+    "role": "SUPER_ADMIN",
+    "isActive": true,
+    "name": "Vandrichh Development Admin",
+    "email": "admin@vandrichh.com",
+    "passwordHash": "$2a$12$olblsmuQjneSIpbCWOBbmun4Lun3kVWIpt4awMbUb4PI84gG8RU9C",
+    "_id": "admin_008",
+    "createdAt": "2026-10-04T05:19:25.413Z",
+    "updatedAt": "2026-10-04T05:19:25.413Z"
+  },
+  {
+    "role": "SUPER_ADMIN",
+    "isActive": true,
+    "name": "Vandrichh Admin",
+    "email": "bootstrap-admin-1791092445451-oy7693@example.com",
+    "passwordHash": "$2a$12$KLcxn8tnzad3cUh1hzE7yu1uGH9GVXhxuCeZLEP4vvsHuAMTvURoK",
+    "_id": "admin_009",
+    "createdAt": "2026-10-04T05:40:45.816Z",
+    "updatedAt": "2026-10-04T05:40:45.816Z"
   }
 ]

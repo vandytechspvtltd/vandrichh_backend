@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { loadEnv } from "../src/config/env.js";
+import { ensureBootstrapAdmin } from "../src/services/admin-bootstrap.service.js";
 
 const originalWorkingDirectory = process.cwd();
 const temporaryDataDirectory = await mkdtemp(path.join(tmpdir(), "vandrichh-api-test-"));
@@ -70,9 +71,11 @@ const idOf = (result: any) => String(result?.data?._id ?? result?.data?.id ?? "m
 
 const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const adminEmail = `api-admin-${unique}@example.com`;
+const bootstrapAdminEmail = `bootstrap-admin-${unique}@example.com`;
 const customerEmail = `api-customer-${unique}@example.com`;
 const customerPhone = String(7000000000 + Math.floor(Math.random() * 99999999));
 const adminPassword = "TestAdmin123!";
+const bootstrapAdminPassword = "TestBootstrap123!";
 const customerPassword = "TestCustomer123!";
 const sku = `API-ALL-${unique}`;
 const categorySlug = `api-all-${unique}`;
@@ -90,6 +93,20 @@ test("admin and customer HTTP APIs work across shared JSON data", async () => {
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
   try {
+    const bootstrapConfig = {
+      ADMIN_EMAIL: bootstrapAdminEmail,
+      ADMIN_PASSWORD: bootstrapAdminPassword,
+    };
+    await ensureBootstrapAdmin(bootstrapConfig);
+    await ensureBootstrapAdmin(bootstrapConfig);
+
+    const bootstrapLogin = await request(baseUrl, "bootstrap admin login", "/api/v1/admin/login", {
+      method: "POST",
+      body: { email: bootstrapAdminEmail, password: bootstrapAdminPassword },
+    });
+    assert.equal(bootstrapLogin?.data?.admin?.role, "SUPER_ADMIN");
+    assert.equal(bootstrapLogin?.data?.admin?.isActive, true);
+
     const admin = await Admin.create({
       name: "API Test Admin",
       email: adminEmail,

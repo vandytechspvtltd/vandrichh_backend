@@ -53,6 +53,8 @@ Create a local administrator with:
 npm run admin:create -- "Store Admin" admin@example.com "your-password" ADMIN
 ```
 
+For first-start provisioning, set both `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the server environment. The server creates an active `SUPER_ADMIN` in the JSON data store if that email is not already present. Existing accounts are not modified. Configure these variables on the production host and restart or redeploy the server to provision the production account.
+
 ## Run
 
 ```bash
